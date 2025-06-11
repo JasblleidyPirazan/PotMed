@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualización Escalable del POT de Medellín</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         body {
@@ -115,12 +116,13 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color: rgba(255, 255, 255, 0.95);
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             font-size: 0.85em;
             z-index: 1000;
+            min-width: 200px;
         }
 
         .legend-item {
@@ -135,6 +137,15 @@
             margin-right: 10px;
             border-radius: 3px;
             border: 1px solid #333;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 1.1em;
+            color: #666;
         }
     </style>
 </head>
@@ -151,10 +162,12 @@
     </div>
 
     <div class="info-panel">
-        <span id="infoText">Mostrando nodos de nivel 1. Haz clic en un nodo para expandir sus conexiones. Usa la búsqueda para encontrar nodos específicos y ver sus vecindarios.</span>
+        <span id="infoText">Cargando datos...</span>
     </div>
 
-    <div id="network"></div>
+    <div id="network">
+        <div class="loading">Cargando visualización del POT de Medellín...</div>
+    </div>
     
     <div class="legend">
         <div class="legend-item">
@@ -176,6 +189,12 @@
         <div class="legend-item">
             <div class="legend-color" style="background-color: #FFD700;"></div>
             <span>Resultado de Búsqueda</span>
+        </div>
+        <div style="margin-top: 10px; font-size: 0.8em; color: #666;">
+            <strong>Instrucciones:</strong><br>
+            • Haz clic en un nodo para expandir<br>
+            • Busca palabras para ver vecindarios<br>
+            • Usa el botón Reiniciar para volver al inicio
         </div>
     </div>
 
@@ -202,49 +221,101 @@
         let expandedNodes = new Set();
         let currentSearchResults = new Set();
         let network = null;
+        let isSearchMode = false;
 
         // --- FUNCIÓN PARA CARGAR DATOS ---
         async function loadData() {
             try {
-                const [nodeResponse, edgeResponse] = await Promise.all([
-                    fetch('nodos.csv'),
-                    fetch('relaciones.csv')
-                ]);
+                updateInfoText("Cargando archivos CSV...");
+                
+                // Cargar los archivos CSV usando fetch
+                const nodeCSV = await fetch('nodos.csv');
+                const edgeCSV = await fetch('relaciones.csv');
+                
+                if (!nodeCSV.ok || !edgeCSV.ok) {
+                    throw new Error('No se pudieron cargar los archivos CSV');
+                }
+                
+                const nodeText = await nodeCSV.text();
+                const edgeText = await edgeCSV.text();
 
-                const nodeText = await nodeResponse.text();
-                const edgeText = await edgeResponse.text();
-
+                updateInfoText("Procesando datos de nodos...");
+                
                 // Procesar nodos
-                const nodeData = Papa.parse(nodeText, { header: true, skipEmptyLines: true }).data;
-                allNodesData = nodeData.map(node => ({
-                    id: node.id,
-                    label: node.etiqueta ? node.etiqueta.replace(/_/g, ' ') : node.id,
-                    level: node.nivel && node.nivel !== 'N/A' ? parseInt(node.nivel) : 99,
-                    title: `Nivel: ${node.nivel}<br>${node.etiqueta || node.id}`,
-                    originalLabel: node.etiqueta || node.id
-                })).filter(node => node.id); // Filtrar nodos sin ID
+                const nodeData = Papa.parse(nodeText, { 
+                    header: true, 
+                    skipEmptyLines: true,
+                    trimHeaders: true
+                }).data;
+                
+                console.log('Datos de nodos cargados:', nodeData.length);
+                
+                allNodesData = nodeData
+                    .filter(node => node.id && node.id.trim()) // Filtrar nodos sin ID
+                    .map(node => {
+                        const nivel = node.nivel && node.nivel !== 'N/A' ? parseInt(node.nivel) : 99;
+                        const etiqueta = node.etiqueta || node.id;
+                        
+                        return {
+                            id: node.id.trim(),
+                            label: etiqueta.length > 60 ? etiqueta.substring(0, 60) + '...' : etiqueta,
+                            fullLabel: etiqueta,
+                            level: nivel,
+                            title: `Nivel: ${node.nivel || 'N/A'}<br>${etiqueta}`,
+                            originalLabel: etiqueta
+                        };
+                    });
 
+                updateInfoText("Procesando relaciones...");
+                
                 // Procesar relaciones
-                const edgeData = Papa.parse(edgeText, { header: true, skipEmptyLines: true }).data;
-                allEdgesData = edgeData.map(edge => ({
-                    from: edge.origen_id,
-                    to: edge.destino_id
-                })).filter(edge => edge.from && edge.to); // Filtrar relaciones incompletas
+                const edgeData = Papa.parse(edgeText, { 
+                    header: true, 
+                    skipEmptyLines: true,
+                    trimHeaders: true
+                }).data;
+                
+                console.log('Datos de relaciones cargados:', edgeData.length);
+                
+                allEdgesData = edgeData
+                    .filter(edge => edge.origen_id && edge.destino_id) // Filtrar relaciones incompletas
+                    .map((edge, index) => ({
+                        id: `edge_${index}`,
+                        from: edge.origen_id.trim(),
+                        to: edge.destino_id.trim()
+                    }));
 
-                console.log(`Cargados ${allNodesData.length} nodos y ${allEdgesData.length} relaciones`);
+                console.log(`Procesados ${allNodesData.length} nodos y ${allEdgesData.length} relaciones`);
+                
+                // Verificar distribución por niveles
+                const levelStats = {};
+                allNodesData.forEach(node => {
+                    levelStats[node.level] = (levelStats[node.level] || 0) + 1;
+                });
+                console.log('Distribución por niveles:', levelStats);
                 
                 initializeVisualization();
 
             } catch (error) {
                 console.error("Error al cargar los datos:", error);
-                networkContainer.innerHTML = "<p class='error'>Error al cargar los archivos CSV.</p>";
+                networkContainer.innerHTML = `<p class='error'>Error al cargar los datos: ${error.message}</p>`;
             }
         }
 
         // --- FUNCIÓN PARA INICIALIZAR LA VISUALIZACIÓN ---
         function initializeVisualization() {
+            updateInfoText("Inicializando visualización...");
+            
+            // Limpiar el contenedor
+            networkContainer.innerHTML = '';
+            
             // Mostrar solo nodos de nivel 1 inicialmente
             showLevelNodes(1);
+            
+            if (visibleNodes.length === 0) {
+                networkContainer.innerHTML = "<p class='error'>No se encontraron nodos de nivel 1 para mostrar.</p>";
+                return;
+            }
             
             const data = { nodes: visibleNodes, edges: visibleEdges };
             const options = getNetworkOptions();
@@ -253,6 +324,10 @@
             
             // Eventos
             network.on('click', onNodeClick);
+            network.on('stabilizationIterationsDone', function () {
+                updateInfoText();
+            });
+            
             searchInput.addEventListener('input', onSearch);
             resetButton.addEventListener('click', resetView);
             
@@ -262,28 +337,47 @@
         // --- FUNCIÓN PARA MOSTRAR NODOS DE UN NIVEL ESPECÍFICO ---
         function showLevelNodes(level) {
             const levelNodes = allNodesData.filter(node => node.level === level);
+            console.log(`Mostrando ${levelNodes.length} nodos de nivel ${level}`);
+            
+            if (levelNodes.length === 0) {
+                console.warn(`No se encontraron nodos para el nivel ${level}`);
+                return;
+            }
+            
             const nodeUpdates = levelNodes.map(node => ({
                 ...node,
                 color: getNodeColor(node.level),
-                font: { color: '#333', size: 14 }
+                font: { color: '#333', size: 14 },
+                physics: true
             }));
             
             visibleNodes.add(nodeUpdates);
             
             // Agregar las conexiones entre estos nodos
+            updateVisibleEdges();
+        }
+
+        // --- FUNCIÓN PARA ACTUALIZAR ARISTAS VISIBLES ---
+        function updateVisibleEdges() {
             const visibleNodeIds = new Set(visibleNodes.getIds());
             const relevantEdges = allEdgesData.filter(edge => 
                 visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to)
             );
             
+            // Limpiar aristas existentes y agregar las nuevas
+            visibleEdges.clear();
             visibleEdges.add(relevantEdges);
         }
 
         // --- FUNCIÓN PARA EXPANDIR UN NODO ---
         function expandNode(nodeId) {
-            if (expandedNodes.has(nodeId)) return;
+            if (expandedNodes.has(nodeId)) {
+                console.log(`Nodo ${nodeId} ya está expandido`);
+                return;
+            }
             
             expandedNodes.add(nodeId);
+            console.log(`Expandiendo nodo: ${nodeId}`);
             
             // Encontrar todos los nodos conectados
             const connectedEdges = allEdgesData.filter(edge => 
@@ -302,29 +396,19 @@
                 connectedNodeIds.has(node.id) && !visibleNodeIds.has(node.id)
             );
             
+            console.log(`Agregando ${newNodes.length} nodos nuevos`);
+            
             const nodeUpdates = newNodes.map(node => ({
                 ...node,
                 color: getNodeColor(node.level),
-                font: { color: '#333', size: 14 }
+                font: { color: '#333', size: 14 },
+                physics: true
             }));
             
             visibleNodes.add(nodeUpdates);
             
-            // Agregar las nuevas conexiones
-            const newVisibleIds = new Set(visibleNodes.getIds());
-            const newEdges = connectedEdges.filter(edge => 
-                newVisibleIds.has(edge.from) && newVisibleIds.has(edge.to) &&
-                !visibleEdges.getIds().includes(`${edge.from}-${edge.to}`)
-            );
-            
-            // Agregar ID único a las aristas para evitar duplicados
-            const edgesWithId = newEdges.map(edge => ({
-                ...edge,
-                id: `${edge.from}-${edge.to}`
-            }));
-            
-            visibleEdges.add(edgesWithId);
-            
+            // Actualizar todas las aristas
+            updateVisibleEdges();
             updateInfoText();
         }
 
@@ -333,16 +417,26 @@
             const searchText = searchInput.value.toLowerCase().trim();
             
             if (!searchText) {
-                // Limpiar resultados de búsqueda
-                currentSearchResults.clear();
-                resetNodeColors();
+                if (isSearchMode) {
+                    resetView();
+                }
                 return;
             }
+            
+            isSearchMode = true;
+            console.log(`Buscando: "${searchText}"`);
             
             // Encontrar nodos que coincidan con la búsqueda
             const matchingNodes = allNodesData.filter(node => 
                 node.originalLabel.toLowerCase().includes(searchText)
             );
+            
+            console.log(`Encontrados ${matchingNodes.length} nodos que coinciden`);
+            
+            if (matchingNodes.length === 0) {
+                updateInfoText("No se encontraron resultados para la búsqueda.");
+                return;
+            }
             
             // Obtener vecindarios de los nodos encontrados
             const neighborhoodNodes = new Set();
@@ -363,6 +457,8 @@
                 });
             });
             
+            console.log(`Mostrando vecindario de ${neighborhoodNodes.size} nodos`);
+            
             // Mostrar el vecindario
             showNeighborhood(Array.from(neighborhoodNodes), neighborhoodEdges);
             currentSearchResults = new Set(matchingNodes.map(n => n.id));
@@ -377,13 +473,15 @@
             // Limpiar vista actual
             visibleNodes.clear();
             visibleEdges.clear();
+            expandedNodes.clear();
             
             // Agregar nodos del vecindario
             const nodesToShow = allNodesData.filter(node => nodeIds.includes(node.id));
             const nodeUpdates = nodesToShow.map(node => ({
                 ...node,
                 color: getNodeColor(node.level),
-                font: { color: '#333', size: 14 }
+                font: { color: '#333', size: 14 },
+                physics: true
             }));
             
             visibleNodes.add(nodeUpdates);
@@ -392,10 +490,7 @@
             const visibleNodeIds = new Set(visibleNodes.getIds());
             const relevantEdges = edges.filter(edge => 
                 visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to)
-            ).map(edge => ({
-                ...edge,
-                id: `${edge.from}-${edge.to}`
-            }));
+            );
             
             visibleEdges.add(relevantEdges);
         }
@@ -411,19 +506,6 @@
                         font: { color: '#000', size: 16 }
                     });
                 }
-            });
-            visibleNodes.update(updates);
-        }
-
-        // --- FUNCIÓN PARA RESTABLECER COLORES ---
-        function resetNodeColors() {
-            const updates = [];
-            visibleNodes.forEach(node => {
-                updates.push({
-                    id: node.id,
-                    color: getNodeColor(node.level),
-                    font: { color: '#333', size: 14 }
-                });
             });
             visibleNodes.update(updates);
         }
@@ -444,24 +526,33 @@
         function onNodeClick(params) {
             if (params.nodes.length > 0) {
                 const nodeId = params.nodes[0];
+                console.log(`Click en nodo: ${nodeId}`);
                 expandNode(nodeId);
             }
         }
 
         // --- FUNCIÓN PARA REINICIAR VISTA ---
         function resetView() {
+            console.log("Reiniciando vista");
+            
             visibleNodes.clear();
             visibleEdges.clear();
             expandedNodes.clear();
             currentSearchResults.clear();
             searchInput.value = '';
+            isSearchMode = false;
             
             showLevelNodes(1);
             updateInfoText();
         }
 
         // --- FUNCIÓN PARA ACTUALIZAR TEXTO INFORMATIVO ---
-        function updateInfoText() {
+        function updateInfoText(message = null) {
+            if (message) {
+                infoText.textContent = message;
+                return;
+            }
+            
             const nodeCount = visibleNodes.length;
             const edgeCount = visibleEdges.length;
             const searchActive = searchInput.value.trim() !== '';
@@ -477,18 +568,25 @@
         function getNetworkOptions() {
             return {
                 layout: {
-                    hierarchical: {
-                        enabled: false
-                    }
+                    randomSeed: 2 // Para hacer el layout consistente
                 },
                 nodes: {
                     shape: 'box',
-                    font: { size: 14, color: '#333' },
+                    font: { 
+                        size: 14, 
+                        color: '#333',
+                        multi: 'html'
+                    },
                     borderWidth: 2,
                     margin: 10,
+                    widthConstraint: {
+                        maximum: 300
+                    },
                     chosen: {
                         node: function(values, id, selected, hovering) {
-                            values.color = '#FF6B6B';
+                            if (hovering) {
+                                values.color = '#FF6B6B';
+                            }
                         }
                     }
                 },
@@ -496,35 +594,45 @@
                     arrows: 'to', 
                     color: '#848484', 
                     smooth: {
-                        type: 'continuous',
+                        type: 'dynamic',
                         roundness: 0.2
-                    }
+                    },
+                    width: 1
                 },
                 interaction: { 
                     hover: true, 
                     zoomView: true, 
                     dragView: true,
-                    tooltipDelay: 300
+                    tooltipDelay: 300,
+                    hideEdgesOnDrag: true,
+                    hideNodesOnDrag: false
                 },
                 physics: { 
                     enabled: true,
-                    stabilization: { iterations: 100 },
+                    stabilization: { 
+                        iterations: 200,
+                        updateInterval: 50
+                    },
                     barnesHut: {
-                        gravitationalConstant: -2000,
-                        centralGravity: 0.3,
-                        springLength: 95,
-                        springConstant: 0.04,
-                        damping: 0.09
-                    }
+                        gravitationalConstant: -3000,
+                        centralGravity: 0.1,
+                        springLength: 120,
+                        springConstant: 0.05,
+                        damping: 0.1,
+                        avoidOverlap: 0.2
+                    },
+                    maxVelocity: 30,
+                    minVelocity: 0.1,
+                    solver: 'barnesHut'
                 }
             };
         }
 
         // --- INICIALIZAR APLICACIÓN ---
-        const papaScript = document.createElement('script');
-        papaScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js';
-        papaScript.onload = () => loadData();
-        document.head.appendChild(papaScript);
+        window.addEventListener('load', function() {
+            console.log("Iniciando carga de datos...");
+            loadData();
+        });
 
     </script>
 
