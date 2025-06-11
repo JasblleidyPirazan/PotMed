@@ -11,20 +11,30 @@
 
     <div class="header">
         <h1>Visualización Interactiva - POT Medellín</h1>
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Buscar por palabra clave...">
-            <button id="searchButton">Buscar</button>
-            <button id="resetButton">Limpiar</button>
+        <div class="filters-container">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Buscar por palabra clave...">
+            </div>
+            <div class="level-filter-container">
+                <select id="levelFilter">
+                    <option value="all">-- Todos los Niveles --</option>
+                </select>
+            </div>
+            <button id="resetButton">Limpiar Filtros</button>
         </div>
     </div>
 
     <div id="network"></div>
 
+    <footer>
+        <p>Desarrollado por Jasblleidy Pirazán García.</p>
+    </footer>
+
     <script>
         // --- 1. CONFIGURACIÓN INICIAL ---
         const networkContainer = document.getElementById('network');
         const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
+        const levelFilter = document.getElementById('levelFilter');
         const resetButton = document.getElementById('resetButton');
 
         // DataSet es un objeto especial de Vis.js que permite la manipulación dinámica de datos
@@ -37,7 +47,6 @@
         // --- 2. FUNCIÓN PARA CARGAR Y PROCESAR LOS DATOS CSV ---
         async function loadData() {
             try {
-                // Cargamos los dos archivos CSV de forma asíncrona
                 const [nodeResponse, edgeResponse] = await Promise.all([
                     fetch('nodos.csv'),
                     fetch('relaciones.csv')
@@ -50,13 +59,16 @@
                 const nodeData = Papa.parse(nodeText, { header: true, skipEmptyLines: true }).data;
                 const processedNodes = nodeData.map(node => ({
                     id: node.id,
-                    label: node.etiqueta.replace(/_/g, ' '), // Reemplaza guiones bajos por espacios
-                    level: parseInt(node.nivel), // Usamos el nivel para la jerarquía
-                    title: `Nivel: ${node.nivel}<br>${node.etiqueta}` // Tooltip al pasar el mouse
+                    label: node.etiqueta.replace(/_/g, ' '),
+                    level: parseInt(node.nivel),
+                    title: `Nivel: ${node.nivel}<br>${node.etiqueta}`
                 }));
                 nodes.add(processedNodes);
                 allNodes = nodes.get({ returnType: "Object" });
-
+                
+                // --- NUEVO: Poblar el filtro de niveles ---
+                const uniqueLevels = [...new Set(nodeData.map(node => node.nivel).filter(n => n))].sort((a,b) => a - b);
+                populateLevelFilter(uniqueLevels);
 
                 // Procesamos las relaciones (edges)
                 const edgeData = Papa.parse(edgeText, { header: true, skipEmptyLines: true }).data;
@@ -70,21 +82,29 @@
 
             } catch (error) {
                 console.error("Error al cargar los datos:", error);
-                networkContainer.innerHTML = "<p class='error'>No se pudieron cargar los archivos CSV. Asegúrate de que estén en la misma carpeta y de estar usando un servidor local.</p>";
+                networkContainer.innerHTML = "<p class='error'>No se pudieron cargar los archivos CSV. Asegúrate de que estén en la misma carpeta y de que el repositorio de GitHub esté configurado para Pages.</p>";
             }
+        }
+
+        // --- NUEVO: Función para llenar el menú de niveles ---
+        function populateLevelFilter(levels) {
+            levels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = `Nivel ${level}`;
+                levelFilter.appendChild(option);
+            });
         }
 
         // --- 3. FUNCIÓN PARA DIBUJAR EL GRAFO ---
         function drawNetwork() {
             const data = { nodes: nodes, edges: edges };
-
-            // Opciones de configuración para la visualización
             const options = {
                 layout: {
                     hierarchical: {
                         enabled: true,
-                        direction: 'UD', // UD: Up-Down, LR: Left-Right
-                        sortMethod: 'directed', // Usa la dirección de las flechas para ordenar
+                        direction: 'UD',
+                        sortMethod: 'directed',
                         levelSeparation: 150,
                     }
                 },
@@ -95,76 +115,51 @@
                     color: {
                         background: '#D2E5FF',
                         border: '#2B7CE9',
-                        highlight: {
-                            background: '#FFDAB9',
-                            border: '#FF4500'
-                        }
+                        highlight: { background: '#FFDAB9', border: '#FF4500' }
                     }
                 },
-                edges: {
-                    arrows: 'to',
-                    color: '#848484',
-                    smooth: true
-                },
-                interaction: {
-                    hover: true,
-                    zoomView: true,
-                    dragView: true
-                },
-                physics: {
-                    enabled: false // Desactivamos la física para mantener la estructura jerárquica
-                }
+                edges: { arrows: 'to', color: '#848484', smooth: true },
+                interaction: { hover: true, zoomView: true, dragView: true },
+                physics: { enabled: false }
             };
             
-            const network = new vis.Network(networkContainer, data, options);
+            new vis.Network(networkContainer, data, options);
             
-            // Evento para el filtro
-            searchButton.addEventListener('click', () => filterNetwork(searchInput.value));
-            resetButton.addEventListener('click', resetNetwork);
-            searchInput.addEventListener('keyup', (event) => {
-                if (event.key === 'Enter') {
-                    filterNetwork(searchInput.value);
-                }
-            });
+            // --- MODIFICADO: Eventos para los filtros ---
+            searchInput.addEventListener('input', applyFilters);
+            levelFilter.addEventListener('change', applyFilters);
+            resetButton.addEventListener('click', resetFilters);
         }
         
-        // --- 4. LÓGICA DE FILTRADO ---
-        function filterNetwork(searchText) {
-            const normalizedSearchText = searchText.toLowerCase().trim();
-            
-            if (normalizedSearchText === '') {
-                resetNetwork();
-                return;
-            }
+        // --- 4. LÓGICA DE FILTRADO COMBINADA (MODIFICADA) ---
+        function applyFilters() {
+            const searchText = searchInput.value.toLowerCase().trim();
+            const selectedLevel = levelFilter.value;
 
             const updates = [];
             nodes.forEach(node => {
-                const isMatch = node.label.toLowerCase().includes(normalizedSearchText);
-                
-                // Si no coincide, lo hacemos casi transparente
-                if (!isMatch) {
-                    updates.push({ id: node.id, color: { background: '#F0F0F0', border: '#D3D3D3' }, font: {color: '#D3D3D3'} });
-                } else {
-                // Si coincide, lo devolvemos a su color original
+                // Comprobamos ambas condiciones
+                const textMatch = node.label.toLowerCase().includes(searchText);
+                const levelMatch = (selectedLevel === 'all' || node.level.toString() === selectedLevel);
+
+                // Si cumple ambas, lo resaltamos. Si no, lo atenuamos.
+                if (textMatch && levelMatch) {
                     updates.push({ id: node.id, color: { background: '#D2E5FF', border: '#2B7CE9' }, font: {color: '#333'} });
+                } else {
+                    updates.push({ id: node.id, color: { background: '#F0F0F0', border: '#D3D3D3' }, font: {color: '#D3D3D3'} });
                 }
             });
             nodes.update(updates);
         }
 
-        // Función para limpiar el filtro
-        function resetNetwork() {
+        // --- MODIFICADO: Función para limpiar ambos filtros ---
+        function resetFilters() {
             searchInput.value = '';
-            const updates = Object.values(allNodes).map(node => ({
-                id: node.id,
-                color: { background: '#D2E5FF', border: '#2B7CE9' },
-                font: {color: '#333'}
-            }));
-            nodes.update(updates);
+            levelFilter.value = 'all';
+            applyFilters(); // Llama a la función principal para que restablezca la vista
         }
 
         // --- 5. INICIAMOS LA CARGA DE DATOS ---
-        // Usaremos PapaParse para facilitar la lectura de CSV, lo incluimos desde un CDN
         const papaScript = document.createElement('script');
         papaScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js';
         papaScript.onload = () => loadData();
