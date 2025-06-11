@@ -3,48 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualización del POT de Medellín</title>
+    <title>Visualización Escalable del POT de Medellín</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background-color: #fff;
+            padding: 15px 30px;
+            border-bottom: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5em;
+            color: #0056b3;
+        }
+
+        .controls-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+        }
+
+        #searchInput {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+            width: 300px;
+        }
+
+        button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            background-color: #007bff;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #resetButton {
+            background-color: #6c757d;
+        }
+
+        #resetButton:hover {
+            background-color: #5a6268;
+        }
+
+        .info-panel {
+            background-color: #e9f4ff;
+            padding: 10px 30px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+
+        #network {
+            width: 100%;
+            flex-grow: 1;
+            border-top: 1px solid #ddd;
+        }
+
+        footer {
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            flex-shrink: 0;
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9em;
+        }
+
+        .error {
+            padding: 30px;
+            text-align: center;
+            font-size: 1.2em;
+            color: #D8000C;
+            background-color: #FFD2D2;
+        }
+
+        .legend {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-size: 0.85em;
+            z-index: 1000;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 3px;
+            border: 1px solid #333;
+        }
+    </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Visualización Interactiva - POT Medellín</h1>
-        <div class="filters-container">
+        <h1>Visualización Escalable - POT Medellín</h1>
+        <div class="controls-container">
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="Buscar por palabra clave...">
             </div>
-            <div class="level-filter-container">
-                <select id="levelFilter">
-                    <option value="all">-- Todos los Niveles --</option>
-                </select>
-            </div>
-            <button id="resetButton">Limpiar Filtros</button>
+            <button id="resetButton">Reiniciar Vista</button>
         </div>
     </div>
 
+    <div class="info-panel">
+        <span id="infoText">Mostrando nodos de nivel 1. Haz clic en un nodo para expandir sus conexiones. Usa la búsqueda para encontrar nodos específicos y ver sus vecindarios.</span>
+    </div>
+
     <div id="network"></div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #2B7CE9;"></div>
+            <span>Nivel 1 (Títulos)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #5CB85C;"></div>
+            <span>Nivel 2 (Capítulos)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #F0AD4E;"></div>
+            <span>Nivel 3 (Artículos)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #D9534F;"></div>
+            <span>Otros Niveles</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #FFD700;"></div>
+            <span>Resultado de Búsqueda</span>
+        </div>
+    </div>
 
     <footer>
-        <p>Desarrollado por Jasblleidy Pirazán García.</p>
+        <p>Desarrollado por Jasblleidy Pirazán García - Visualización Escalable</p>
     </footer>
 
     <script>
-        // --- 1. CONFIGURACIÓN INICIAL ---
+        // --- CONFIGURACIÓN INICIAL ---
         const networkContainer = document.getElementById('network');
         const searchInput = document.getElementById('searchInput');
-        const levelFilter = document.getElementById('levelFilter');
         const resetButton = document.getElementById('resetButton');
+        const infoText = document.getElementById('infoText');
 
-        // DataSet es un objeto especial de Vis.js que permite la manipulación dinámica de datos
-        let nodes = new vis.DataSet([]);
-        let edges = new vis.DataSet([]);
+        // Datos originales
+        let allNodesData = [];
+        let allEdgesData = [];
         
-        // Guardamos una copia de todos los nodos para poder restaurar la vista
-        let allNodes; 
+        // Datasets para la visualización
+        let visibleNodes = new vis.DataSet([]);
+        let visibleEdges = new vis.DataSet([]);
+        
+        // Estado de la aplicación
+        let expandedNodes = new Set();
+        let currentSearchResults = new Set();
+        let network = null;
 
-        // --- 2. FUNCIÓN PARA CARGAR Y PROCESAR LOS DATOS CSV ---
+        // --- FUNCIÓN PARA CARGAR DATOS ---
         async function loadData() {
             try {
                 const [nodeResponse, edgeResponse] = await Promise.all([
@@ -55,111 +214,313 @@
                 const nodeText = await nodeResponse.text();
                 const edgeText = await edgeResponse.text();
 
-                // Procesamos los datos de los nodos
+                // Procesar nodos
                 const nodeData = Papa.parse(nodeText, { header: true, skipEmptyLines: true }).data;
-                const processedNodes = nodeData.map(node => ({
+                allNodesData = nodeData.map(node => ({
                     id: node.id,
-                    label: node.etiqueta.replace(/_/g, ' '),
-                    level: parseInt(node.nivel),
-                    title: `Nivel: ${node.nivel}<br>${node.etiqueta}`
-                }));
-                nodes.add(processedNodes);
-                allNodes = nodes.get({ returnType: "Object" });
-                
-                // --- NUEVO: Poblar el filtro de niveles ---
-                const uniqueLevels = [...new Set(nodeData.map(node => node.nivel).filter(n => n))].sort((a,b) => a - b);
-                populateLevelFilter(uniqueLevels);
+                    label: node.etiqueta ? node.etiqueta.replace(/_/g, ' ') : node.id,
+                    level: node.nivel && node.nivel !== 'N/A' ? parseInt(node.nivel) : 99,
+                    title: `Nivel: ${node.nivel}<br>${node.etiqueta || node.id}`,
+                    originalLabel: node.etiqueta || node.id
+                })).filter(node => node.id); // Filtrar nodos sin ID
 
-                // Procesamos las relaciones (edges)
+                // Procesar relaciones
                 const edgeData = Papa.parse(edgeText, { header: true, skipEmptyLines: true }).data;
-                const processedEdges = edgeData.map(edge => ({
+                allEdgesData = edgeData.map(edge => ({
                     from: edge.origen_id,
                     to: edge.destino_id
-                }));
-                edges.add(processedEdges);
+                })).filter(edge => edge.from && edge.to); // Filtrar relaciones incompletas
 
-                drawNetwork();
+                console.log(`Cargados ${allNodesData.length} nodos y ${allEdgesData.length} relaciones`);
+                
+                initializeVisualization();
 
             } catch (error) {
                 console.error("Error al cargar los datos:", error);
-                networkContainer.innerHTML = "<p class='error'>No se pudieron cargar los archivos CSV. Asegúrate de que estén en la misma carpeta y de que el repositorio de GitHub esté configurado para Pages.</p>";
+                networkContainer.innerHTML = "<p class='error'>Error al cargar los archivos CSV.</p>";
             }
         }
 
-        // --- NUEVO: Función para llenar el menú de niveles ---
-        function populateLevelFilter(levels) {
-            levels.forEach(level => {
-                const option = document.createElement('option');
-                option.value = level;
-                option.textContent = `Nivel ${level}`;
-                levelFilter.appendChild(option);
-            });
+        // --- FUNCIÓN PARA INICIALIZAR LA VISUALIZACIÓN ---
+        function initializeVisualization() {
+            // Mostrar solo nodos de nivel 1 inicialmente
+            showLevelNodes(1);
+            
+            const data = { nodes: visibleNodes, edges: visibleEdges };
+            const options = getNetworkOptions();
+            
+            network = new vis.Network(networkContainer, data, options);
+            
+            // Eventos
+            network.on('click', onNodeClick);
+            searchInput.addEventListener('input', onSearch);
+            resetButton.addEventListener('click', resetView);
+            
+            updateInfoText();
         }
 
-        // --- 3. FUNCIÓN PARA DIBUJAR EL GRAFO ---
-        function drawNetwork() {
-            const data = { nodes: nodes, edges: edges };
-            const options = {
+        // --- FUNCIÓN PARA MOSTRAR NODOS DE UN NIVEL ESPECÍFICO ---
+        function showLevelNodes(level) {
+            const levelNodes = allNodesData.filter(node => node.level === level);
+            const nodeUpdates = levelNodes.map(node => ({
+                ...node,
+                color: getNodeColor(node.level),
+                font: { color: '#333', size: 14 }
+            }));
+            
+            visibleNodes.add(nodeUpdates);
+            
+            // Agregar las conexiones entre estos nodos
+            const visibleNodeIds = new Set(visibleNodes.getIds());
+            const relevantEdges = allEdgesData.filter(edge => 
+                visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to)
+            );
+            
+            visibleEdges.add(relevantEdges);
+        }
+
+        // --- FUNCIÓN PARA EXPANDIR UN NODO ---
+        function expandNode(nodeId) {
+            if (expandedNodes.has(nodeId)) return;
+            
+            expandedNodes.add(nodeId);
+            
+            // Encontrar todos los nodos conectados
+            const connectedEdges = allEdgesData.filter(edge => 
+                edge.from === nodeId || edge.to === nodeId
+            );
+            
+            const connectedNodeIds = new Set();
+            connectedEdges.forEach(edge => {
+                connectedNodeIds.add(edge.from);
+                connectedNodeIds.add(edge.to);
+            });
+            
+            // Agregar nodos conectados que no están visibles
+            const visibleNodeIds = new Set(visibleNodes.getIds());
+            const newNodes = allNodesData.filter(node => 
+                connectedNodeIds.has(node.id) && !visibleNodeIds.has(node.id)
+            );
+            
+            const nodeUpdates = newNodes.map(node => ({
+                ...node,
+                color: getNodeColor(node.level),
+                font: { color: '#333', size: 14 }
+            }));
+            
+            visibleNodes.add(nodeUpdates);
+            
+            // Agregar las nuevas conexiones
+            const newVisibleIds = new Set(visibleNodes.getIds());
+            const newEdges = connectedEdges.filter(edge => 
+                newVisibleIds.has(edge.from) && newVisibleIds.has(edge.to) &&
+                !visibleEdges.getIds().includes(`${edge.from}-${edge.to}`)
+            );
+            
+            // Agregar ID único a las aristas para evitar duplicados
+            const edgesWithId = newEdges.map(edge => ({
+                ...edge,
+                id: `${edge.from}-${edge.to}`
+            }));
+            
+            visibleEdges.add(edgesWithId);
+            
+            updateInfoText();
+        }
+
+        // --- FUNCIÓN PARA BÚSQUEDA ---
+        function onSearch() {
+            const searchText = searchInput.value.toLowerCase().trim();
+            
+            if (!searchText) {
+                // Limpiar resultados de búsqueda
+                currentSearchResults.clear();
+                resetNodeColors();
+                return;
+            }
+            
+            // Encontrar nodos que coincidan con la búsqueda
+            const matchingNodes = allNodesData.filter(node => 
+                node.originalLabel.toLowerCase().includes(searchText)
+            );
+            
+            // Obtener vecindarios de los nodos encontrados
+            const neighborhoodNodes = new Set();
+            const neighborhoodEdges = [];
+            
+            matchingNodes.forEach(node => {
+                neighborhoodNodes.add(node.id);
+                
+                // Encontrar vecinos directos
+                const connectedEdges = allEdgesData.filter(edge => 
+                    edge.from === node.id || edge.to === node.id
+                );
+                
+                connectedEdges.forEach(edge => {
+                    neighborhoodNodes.add(edge.from);
+                    neighborhoodNodes.add(edge.to);
+                    neighborhoodEdges.push(edge);
+                });
+            });
+            
+            // Mostrar el vecindario
+            showNeighborhood(Array.from(neighborhoodNodes), neighborhoodEdges);
+            currentSearchResults = new Set(matchingNodes.map(n => n.id));
+            
+            // Resaltar nodos de búsqueda
+            highlightSearchResults();
+            updateInfoText();
+        }
+
+        // --- FUNCIÓN PARA MOSTRAR VECINDARIO ---
+        function showNeighborhood(nodeIds, edges) {
+            // Limpiar vista actual
+            visibleNodes.clear();
+            visibleEdges.clear();
+            
+            // Agregar nodos del vecindario
+            const nodesToShow = allNodesData.filter(node => nodeIds.includes(node.id));
+            const nodeUpdates = nodesToShow.map(node => ({
+                ...node,
+                color: getNodeColor(node.level),
+                font: { color: '#333', size: 14 }
+            }));
+            
+            visibleNodes.add(nodeUpdates);
+            
+            // Agregar conexiones del vecindario
+            const visibleNodeIds = new Set(visibleNodes.getIds());
+            const relevantEdges = edges.filter(edge => 
+                visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to)
+            ).map(edge => ({
+                ...edge,
+                id: `${edge.from}-${edge.to}`
+            }));
+            
+            visibleEdges.add(relevantEdges);
+        }
+
+        // --- FUNCIÓN PARA RESALTAR RESULTADOS DE BÚSQUEDA ---
+        function highlightSearchResults() {
+            const updates = [];
+            visibleNodes.forEach(node => {
+                if (currentSearchResults.has(node.id)) {
+                    updates.push({
+                        id: node.id,
+                        color: { background: '#FFD700', border: '#FF8C00' },
+                        font: { color: '#000', size: 16 }
+                    });
+                }
+            });
+            visibleNodes.update(updates);
+        }
+
+        // --- FUNCIÓN PARA RESTABLECER COLORES ---
+        function resetNodeColors() {
+            const updates = [];
+            visibleNodes.forEach(node => {
+                updates.push({
+                    id: node.id,
+                    color: getNodeColor(node.level),
+                    font: { color: '#333', size: 14 }
+                });
+            });
+            visibleNodes.update(updates);
+        }
+
+        // --- FUNCIÓN PARA OBTENER COLOR POR NIVEL ---
+        function getNodeColor(level) {
+            const colors = {
+                1: { background: '#2B7CE9', border: '#1A5CC9' },
+                2: { background: '#5CB85C', border: '#4CAE4C' },
+                3: { background: '#F0AD4E', border: '#EC971F' },
+                4: { background: '#D9534F', border: '#C9302C' },
+                99: { background: '#999999', border: '#777777' }
+            };
+            return colors[level] || colors[99];
+        }
+
+        // --- FUNCIÓN PARA MANEJAR CLICKS EN NODOS ---
+        function onNodeClick(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                expandNode(nodeId);
+            }
+        }
+
+        // --- FUNCIÓN PARA REINICIAR VISTA ---
+        function resetView() {
+            visibleNodes.clear();
+            visibleEdges.clear();
+            expandedNodes.clear();
+            currentSearchResults.clear();
+            searchInput.value = '';
+            
+            showLevelNodes(1);
+            updateInfoText();
+        }
+
+        // --- FUNCIÓN PARA ACTUALIZAR TEXTO INFORMATIVO ---
+        function updateInfoText() {
+            const nodeCount = visibleNodes.length;
+            const edgeCount = visibleEdges.length;
+            const searchActive = searchInput.value.trim() !== '';
+            
+            if (searchActive) {
+                infoText.textContent = `Mostrando ${nodeCount} nodos y ${edgeCount} conexiones del vecindario de búsqueda. Los nodos dorados son resultados directos.`;
+            } else {
+                infoText.textContent = `Mostrando ${nodeCount} nodos y ${edgeCount} conexiones. Haz clic en un nodo para expandir sus conexiones.`;
+            }
+        }
+
+        // --- OPCIONES DE LA RED ---
+        function getNetworkOptions() {
+            return {
                 layout: {
                     hierarchical: {
-                        enabled: true,
-                        direction: 'UD',
-                        sortMethod: 'directed',
-                        levelSeparation: 150,
+                        enabled: false
                     }
                 },
                 nodes: {
                     shape: 'box',
                     font: { size: 14, color: '#333' },
                     borderWidth: 2,
-                    color: {
-                        background: '#D2E5FF',
-                        border: '#2B7CE9',
-                        highlight: { background: '#FFDAB9', border: '#FF4500' }
+                    margin: 10,
+                    chosen: {
+                        node: function(values, id, selected, hovering) {
+                            values.color = '#FF6B6B';
+                        }
                     }
                 },
-                edges: { arrows: 'to', color: '#848484', smooth: true },
-                interaction: { hover: true, zoomView: true, dragView: true },
-                physics: { enabled: false }
-            };
-            
-            new vis.Network(networkContainer, data, options);
-            
-            // --- MODIFICADO: Eventos para los filtros ---
-            searchInput.addEventListener('input', applyFilters);
-            levelFilter.addEventListener('change', applyFilters);
-            resetButton.addEventListener('click', resetFilters);
-        }
-        
-        // --- 4. LÓGICA DE FILTRADO COMBINADA (MODIFICADA) ---
-        function applyFilters() {
-            const searchText = searchInput.value.toLowerCase().trim();
-            const selectedLevel = levelFilter.value;
-
-            const updates = [];
-            nodes.forEach(node => {
-                // Comprobamos ambas condiciones
-                const textMatch = node.label.toLowerCase().includes(searchText);
-                const levelMatch = (selectedLevel === 'all' || node.level.toString() === selectedLevel);
-
-                // Si cumple ambas, lo resaltamos. Si no, lo atenuamos.
-                if (textMatch && levelMatch) {
-                    updates.push({ id: node.id, color: { background: '#D2E5FF', border: '#2B7CE9' }, font: {color: '#333'} });
-                } else {
-                    updates.push({ id: node.id, color: { background: '#F0F0F0', border: '#D3D3D3' }, font: {color: '#D3D3D3'} });
+                edges: { 
+                    arrows: 'to', 
+                    color: '#848484', 
+                    smooth: {
+                        type: 'continuous',
+                        roundness: 0.2
+                    }
+                },
+                interaction: { 
+                    hover: true, 
+                    zoomView: true, 
+                    dragView: true,
+                    tooltipDelay: 300
+                },
+                physics: { 
+                    enabled: true,
+                    stabilization: { iterations: 100 },
+                    barnesHut: {
+                        gravitationalConstant: -2000,
+                        centralGravity: 0.3,
+                        springLength: 95,
+                        springConstant: 0.04,
+                        damping: 0.09
+                    }
                 }
-            });
-            nodes.update(updates);
+            };
         }
 
-        // --- MODIFICADO: Función para limpiar ambos filtros ---
-        function resetFilters() {
-            searchInput.value = '';
-            levelFilter.value = 'all';
-            applyFilters(); // Llama a la función principal para que restablezca la vista
-        }
-
-        // --- 5. INICIAMOS LA CARGA DE DATOS ---
+        // --- INICIALIZAR APLICACIÓN ---
         const papaScript = document.createElement('script');
         papaScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js';
         papaScript.onload = () => loadData();
