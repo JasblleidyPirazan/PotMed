@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización del POT de Medellín</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="header">
+        <h1>Visualización Interactiva - POT Medellín</h1>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Buscar por palabra clave...">
+            <button id="searchButton">Buscar</button>
+            <button id="resetButton">Limpiar</button>
+        </div>
+    </div>
+
+    <div id="network"></div>
+
+    <script>
+        // --- 1. CONFIGURACIÓN INICIAL ---
+        const networkContainer = document.getElementById('network');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const resetButton = document.getElementById('resetButton');
+
+        // DataSet es un objeto especial de Vis.js que permite la manipulación dinámica de datos
+        let nodes = new vis.DataSet([]);
+        let edges = new vis.DataSet([]);
+        
+        // Guardamos una copia de todos los nodos para poder restaurar la vista
+        let allNodes; 
+
+        // --- 2. FUNCIÓN PARA CARGAR Y PROCESAR LOS DATOS CSV ---
+        async function loadData() {
+            try {
+                // Cargamos los dos archivos CSV de forma asíncrona
+                const [nodeResponse, edgeResponse] = await Promise.all([
+                    fetch('nodos.csv'),
+                    fetch('relaciones.csv')
+                ]);
+
+                const nodeText = await nodeResponse.text();
+                const edgeText = await edgeResponse.text();
+
+                // Procesamos los datos de los nodos
+                const nodeData = Papa.parse(nodeText, { header: true, skipEmptyLines: true }).data;
+                const processedNodes = nodeData.map(node => ({
+                    id: node.id,
+                    label: node.etiqueta.replace(/_/g, ' '), // Reemplaza guiones bajos por espacios
+                    level: parseInt(node.nivel), // Usamos el nivel para la jerarquía
+                    title: `Nivel: ${node.nivel}<br>${node.etiqueta}` // Tooltip al pasar el mouse
+                }));
+                nodes.add(processedNodes);
+                allNodes = nodes.get({ returnType: "Object" });
+
+
+                // Procesamos las relaciones (edges)
+                const edgeData = Papa.parse(edgeText, { header: true, skipEmptyLines: true }).data;
+                const processedEdges = edgeData.map(edge => ({
+                    from: edge.origen_id,
+                    to: edge.destino_id
+                }));
+                edges.add(processedEdges);
+
+                drawNetwork();
+
+            } catch (error) {
+                console.error("Error al cargar los datos:", error);
+                networkContainer.innerHTML = "<p class='error'>No se pudieron cargar los archivos CSV. Asegúrate de que estén en la misma carpeta y de estar usando un servidor local.</p>";
+            }
+        }
+
+        // --- 3. FUNCIÓN PARA DIBUJAR EL GRAFO ---
+        function drawNetwork() {
+            const data = { nodes: nodes, edges: edges };
+
+            // Opciones de configuración para la visualización
+            const options = {
+                layout: {
+                    hierarchical: {
+                        enabled: true,
+                        direction: 'UD', // UD: Up-Down, LR: Left-Right
+                        sortMethod: 'directed', // Usa la dirección de las flechas para ordenar
+                        levelSeparation: 150,
+                    }
+                },
+                nodes: {
+                    shape: 'box',
+                    font: { size: 14, color: '#333' },
+                    borderWidth: 2,
+                    color: {
+                        background: '#D2E5FF',
+                        border: '#2B7CE9',
+                        highlight: {
+                            background: '#FFDAB9',
+                            border: '#FF4500'
+                        }
+                    }
+                },
+                edges: {
+                    arrows: 'to',
+                    color: '#848484',
+                    smooth: true
+                },
+                interaction: {
+                    hover: true,
+                    zoomView: true,
+                    dragView: true
+                },
+                physics: {
+                    enabled: false // Desactivamos la física para mantener la estructura jerárquica
+                }
+            };
+            
+            const network = new vis.Network(networkContainer, data, options);
+            
+            // Evento para el filtro
+            searchButton.addEventListener('click', () => filterNetwork(searchInput.value));
+            resetButton.addEventListener('click', resetNetwork);
+            searchInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    filterNetwork(searchInput.value);
+                }
+            });
+        }
+        
+        // --- 4. LÓGICA DE FILTRADO ---
+        function filterNetwork(searchText) {
+            const normalizedSearchText = searchText.toLowerCase().trim();
+            
+            if (normalizedSearchText === '') {
+                resetNetwork();
+                return;
+            }
+
+            const updates = [];
+            nodes.forEach(node => {
+                const isMatch = node.label.toLowerCase().includes(normalizedSearchText);
+                
+                // Si no coincide, lo hacemos casi transparente
+                if (!isMatch) {
+                    updates.push({ id: node.id, color: { background: '#F0F0F0', border: '#D3D3D3' }, font: {color: '#D3D3D3'} });
+                } else {
+                // Si coincide, lo devolvemos a su color original
+                    updates.push({ id: node.id, color: { background: '#D2E5FF', border: '#2B7CE9' }, font: {color: '#333'} });
+                }
+            });
+            nodes.update(updates);
+        }
+
+        // Función para limpiar el filtro
+        function resetNetwork() {
+            searchInput.value = '';
+            const updates = Object.values(allNodes).map(node => ({
+                id: node.id,
+                color: { background: '#D2E5FF', border: '#2B7CE9' },
+                font: {color: '#333'}
+            }));
+            nodes.update(updates);
+        }
+
+        // --- 5. INICIAMOS LA CARGA DE DATOS ---
+        // Usaremos PapaParse para facilitar la lectura de CSV, lo incluimos desde un CDN
+        const papaScript = document.createElement('script');
+        papaScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js';
+        papaScript.onload = () => loadData();
+        document.head.appendChild(papaScript);
+
+    </script>
+
+</body>
+</html>
