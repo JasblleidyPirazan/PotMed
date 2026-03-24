@@ -745,18 +745,25 @@ h1 {
 }
 
 /* Tablas de datos */
-.resumen-table-wrapper, .base-table-wrapper {
+.resumen-table-wrapper {
     padding: 0 30px 20px;
     overflow-x: auto;
 }
 
+.base-table-wrapper {
+    padding: 0 30px 20px;
+    overflow: auto;
+    max-height: 70vh;
+    -webkit-overflow-scrolling: touch;
+}
+
 .data-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 0.85em;
     background: #fff;
     border-radius: 8px;
-    overflow: hidden;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
@@ -769,7 +776,7 @@ h1 {
     font-size: 0.9em;
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 3;
 }
 
 .data-table tbody td {
@@ -1327,14 +1334,15 @@ footer p {
    RESPONSIVE
    ========================================================= */
 @media (max-width: 768px) {
+    /* Header */
     .header {
         flex-direction: column;
-        gap: 10px;
-        padding: 12px 15px;
+        gap: 8px;
+        padding: 10px 12px;
     }
 
     h1 {
-        font-size: 1.1em;
+        font-size: 1em;
         text-align: center;
     }
 
@@ -1345,20 +1353,44 @@ footer p {
     .tab-btn {
         flex: 1;
         text-align: center;
-        padding: 8px 10px;
-        font-size: 0.85em;
+        padding: 7px 6px;
+        font-size: 0.75em;
     }
 
+    /* KPI Bar */
+    .kpi-bar {
+        padding: 8px 12px;
+        gap: 6px;
+    }
+
+    .kpi-card {
+        padding: 6px 10px;
+        min-width: 56px;
+    }
+
+    .kpi-number {
+        font-size: 1.15em;
+    }
+
+    .kpi-label {
+        font-size: 0.6em;
+    }
+
+    /* POT Controls */
     .pot-controls {
         flex-direction: column;
-        padding: 10px 15px;
-        gap: 10px;
+        padding: 10px 12px;
+        gap: 8px;
     }
 
     .filter-group {
         flex-direction: column;
         align-items: flex-start;
         width: 100%;
+    }
+
+    .filter-group label {
+        font-size: 0.82em;
     }
 
     .level-filters {
@@ -1369,6 +1401,13 @@ footer p {
     .level-btn {
         flex: 1;
         text-align: center;
+        padding: 6px 8px;
+        font-size: 0.78em;
+    }
+
+    #temaFilter {
+        width: 100%;
+        max-width: none;
     }
 
     .search-container {
@@ -1380,85 +1419,200 @@ footer p {
         flex: 1;
     }
 
+    /* Temas panel */
+    .temas-panel {
+        padding: 10px 12px;
+    }
+
+    .temas-bars {
+        grid-template-columns: 1fr;
+    }
+
+    .tema-label {
+        width: 110px;
+        font-size: 0.72em;
+    }
+
+    .tema-count {
+        font-size: 0.7em;
+    }
+
+    /* Network & panels */
+    .network-wrapper {
+        flex-direction: column;
+    }
+
+    .toc-panel {
+        position: relative;
+        width: 100% !important;
+        height: auto;
+        max-height: 200px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .toc-panel.collapsed {
+        width: 100% !important;
+        max-height: 40px;
+    }
+
+    #network {
+        min-height: 350px;
+    }
+
     .legend {
         position: relative;
         top: auto;
         right: auto;
-        margin: 10px;
+        margin: 8px 12px;
         min-width: auto;
-    }
-
-    .repo-header {
-        padding: 15px;
-    }
-
-    #repoSearchInput {
-        width: 100%;
-    }
-
-    .repo-stats {
-        padding: 12px 15px;
-        flex-wrap: wrap;
-    }
-
-    .stat-card {
-        flex: 1;
-        min-width: 80px;
-        padding: 10px 12px;
-    }
-
-    .repo-container {
-        padding: 15px;
-    }
-
-    .doc-card {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .doc-meta {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
-    }
-
-    .doc-link,
-    .doc-link-pending {
-        margin-left: 0;
     }
 
     .detail-panel {
         width: 100%;
+        max-height: 50vh;
     }
 
+    /* Revisión de Mediano Plazo tab */
     .revision-intro {
-        padding: 20px 15px;
+        padding: 16px 12px;
+    }
+
+    .intro-content h2 {
+        font-size: 1.05em;
+    }
+
+    .intro-text {
+        font-size: 0.84em;
     }
 
     .cc-license {
         flex-direction: column;
         align-items: center;
         text-align: center;
+        font-size: 0.72em;
+        padding: 10px 12px;
     }
 
     .analysis-nav {
-        padding: 0 15px;
+        padding: 0 8px;
+        gap: 0;
     }
 
     .analysis-tab {
-        padding: 10px 14px;
-        font-size: 0.8em;
+        padding: 10px 10px;
+        font-size: 0.74em;
     }
 
-    .section-header, .resumen-table-wrapper, .base-table-wrapper, .conceptos-grid, .cruce-grid {
-        padding-left: 15px;
-        padding-right: 15px;
+    .section-header {
+        padding: 14px 12px 10px;
+    }
+
+    .section-header h3 {
+        font-size: 0.95em;
+    }
+
+    .section-header p {
+        font-size: 0.78em;
     }
 
     .section-header-row {
         flex-direction: column;
     }
 
+    /* Stats */
+    .resumen-global-stats {
+        padding: 10px 12px;
+        gap: 6px;
+    }
+
+    .global-stat {
+        flex: 1;
+        min-width: 60px;
+        padding: 6px 8px;
+    }
+
+    .gs-number {
+        font-size: 1.2em;
+    }
+
+    .gs-label {
+        font-size: 0.65em;
+    }
+
+    /* Charts */
+    .chart-container {
+        padding: 12px;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .chart-box {
+        min-width: unset;
+        padding: 14px;
+    }
+
+    .bar-row {
+        gap: 6px;
+    }
+
+    .bar-label {
+        width: 90px;
+        font-size: 0.68em;
+    }
+
+    .bar-sistema {
+        display: none;
+    }
+
+    .bar-value {
+        font-size: 0.72em;
+    }
+
+    .pie-chart {
+        width: 160px;
+        height: 160px;
+    }
+
+    .pie-center {
+        width: 80px;
+        height: 80px;
+        font-size: 1.1em;
+    }
+
+    /* Tables mobile */
+    .resumen-table-wrapper {
+        padding: 0 12px 16px;
+    }
+
+    .base-table-wrapper {
+        padding: 0 12px 16px;
+        max-height: 60vh;
+    }
+
+    .data-table {
+        font-size: 0.75em;
+    }
+
+    .data-table thead th {
+        padding: 8px 6px;
+        font-size: 0.82em;
+        white-space: nowrap;
+    }
+
+    .data-table tbody td {
+        padding: 6px;
+    }
+
+    .data-table .cell-text {
+        max-width: 160px;
+        font-size: 0.85em;
+    }
+
+    .data-table-compact {
+        font-size: 0.7em;
+    }
+
+    /* Filters */
     .base-filters {
         width: 100%;
     }
@@ -1467,32 +1621,84 @@ footer p {
         width: 100%;
     }
 
-    .chart-container {
-        padding: 15px;
-        flex-direction: column;
+    .base-count {
+        padding: 6px 12px;
+        font-size: 0.78em;
     }
 
-    .resumen-global-stats {
-        padding: 12px 15px;
+    /* Conceptos */
+    .conceptos-grid {
+        grid-template-columns: 1fr;
+        padding: 12px;
+        gap: 10px;
     }
 
-    .global-stat {
-        flex: 1;
-        min-width: 70px;
-        padding: 8px 10px;
+    .concepto-card {
+        padding: 14px;
     }
 
-    .bar-label {
-        width: 120px;
-        font-size: 0.72em;
+    .concepto-header h4 {
+        font-size: 0.88em;
+    }
+
+    /* Cruce */
+    .cruce-grid {
+        padding: 12px;
     }
 
     .cruce-body {
         grid-template-columns: 1fr;
     }
 
-    .conceptos-grid {
-        grid-template-columns: 1fr;
+    .cruce-legend {
+        padding: 8px 12px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 420px) {
+    .kpi-bar {
+        padding: 6px 8px;
+        gap: 4px;
+    }
+
+    .kpi-card {
+        padding: 5px 6px;
+        min-width: 44px;
+    }
+
+    .kpi-number {
+        font-size: 0.95em;
+    }
+
+    .kpi-label {
+        font-size: 0.55em;
+    }
+
+    .analysis-tab {
+        padding: 8px 6px;
+        font-size: 0.68em;
+    }
+
+    .bar-label {
+        width: 70px;
+        font-size: 0.62em;
+    }
+
+    .tema-label {
+        width: 80px;
+        font-size: 0.65em;
+    }
+
+    .global-stat {
+        min-width: 50px;
+        padding: 5px 6px;
+    }
+
+    .gs-number {
+        font-size: 1em;
     }
 }
 
