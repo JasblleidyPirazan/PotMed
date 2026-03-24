@@ -23,19 +23,31 @@
     <!-- TAB 1: POT VIGENTE                          -->
     <!-- ============================================ -->
     <div id="tab-pot-vigente" class="tab-content active">
+
+        <!-- KPI Dashboard -->
+        <div class="kpi-bar" id="kpiBar">
+            <div class="kpi-loading">Cargando métricas...</div>
+        </div>
+
         <!-- Controles del POT -->
         <div class="pot-controls">
             <div class="filter-group">
-                <label>Filtrar por nivel:</label>
+                <label>Explorar por:</label>
                 <div class="level-filters">
-                    <button class="level-btn active" data-level="all">Todos</button>
+                    <button class="level-btn active" data-level="all">Estructura</button>
                     <button class="level-btn" data-level="1">Títulos</button>
                     <button class="level-btn" data-level="2">Capítulos</button>
                     <button class="level-btn" data-level="3">Artículos</button>
                 </div>
             </div>
+            <div class="filter-group">
+                <label>Filtrar por tema:</label>
+                <select id="temaFilter">
+                    <option value="">Todos los temas</option>
+                </select>
+            </div>
             <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Buscar por palabra clave o título...">
+                <input type="text" id="searchInput" placeholder="Buscar artículo, título o palabra clave...">
                 <button id="resetButton">Reiniciar</button>
                 <button id="exportButton" disabled title="Busca primero para exportar resultados">Exportar CSV</button>
             </div>
@@ -43,6 +55,15 @@
 
         <div class="info-panel">
             <span id="infoText">Cargando datos...</span>
+        </div>
+
+        <!-- Temas: barras horizontales debajo de controles -->
+        <div class="temas-panel" id="temasPanel" style="display:none;">
+            <div class="temas-header">
+                <h4>Ejes temáticos del POT</h4>
+                <span class="temas-hint">Clic en un tema para filtrar el grafo</span>
+            </div>
+            <div class="temas-bars" id="temasBarras"></div>
         </div>
 
         <div class="network-wrapper">
@@ -76,29 +97,33 @@
                 <h4>Leyenda</h4>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #1B4F72;"></div>
-                    <span>Nivel 1 - Títulos</span>
+                    <span>Títulos</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #117A65;"></div>
-                    <span>Nivel 2 - Capítulos</span>
+                    <span>Capítulos</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #B7950B;"></div>
-                    <span>Nivel 3 - Artículos</span>
+                    <span>Artículos</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #922B21;"></div>
-                    <span>Otros Niveles</span>
+                    <div class="legend-color" style="background-color: #8E44AD;"></div>
+                    <span>Definiciones</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #FF5722; border: 2px solid #BF360C;"></div>
                     <span>Resultado de Búsqueda</span>
                 </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: transparent; border: 2px dashed #7F8C8D;"></div>
+                    <span>Referencia cruzada</span>
+                </div>
                 <div class="legend-instructions">
-                    <strong>Instrucciones:</strong><br>
-                    Clic en nodo para expandir<br>
-                    Busca palabras para filtrar<br>
-                    Usa los filtros de nivel
+                    <strong>Interacción:</strong><br>
+                    Clic en nodo = expandir + detalle<br>
+                    Barra lateral = navegar por estructura<br>
+                    Temas = filtrar por eje temático
                 </div>
             </div>
         </div>
@@ -212,6 +237,15 @@
 
     <script>
         // =========================================================
+        // UTILIDADES
+        // =========================================================
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // =========================================================
         // NAVEGACIÓN POR TABS
         // =========================================================
         const tabButtons = document.querySelectorAll('.tab-btn');
@@ -234,7 +268,7 @@
         });
 
         // =========================================================
-        // TAB 1: POT VIGENTE - VISUALIZACIÓN
+        // TAB 1: POT VIGENTE - VISUALIZACIÓN (v2 data)
         // =========================================================
         const networkContainer = document.getElementById('network');
         const searchInput = document.getElementById('searchInput');
@@ -245,9 +279,12 @@
         const detailPanel = document.getElementById('detailPanel');
         const detailBody = document.getElementById('detailBody');
         const detailClose = document.getElementById('detailClose');
+        const temaFilter = document.getElementById('temaFilter');
 
         let allNodesData = [];
         let allEdgesData = [];
+        let allTemasData = [];
+        let allKpiData = [];
         let visibleNodes = new vis.DataSet([]);
         let visibleEdges = new vis.DataSet([]);
         let expandedNodes = new Set();
@@ -256,6 +293,7 @@
         let network = null;
         let isSearchMode = false;
         let currentLevelFilter = 'all';
+        let currentTemaFilter = '';
 
         // Cerrar panel de detalle
         detailClose.addEventListener('click', () => {
@@ -274,23 +312,24 @@
         });
 
         function buildTOC() {
-            const titleNodes = allNodesData.filter(n => n.level === 1);
-            const chapterNodes = allNodesData.filter(n => n.level === 2);
+            const titleNodes = allNodesData.filter(n => n.tipo === 'titulo');
+            const chapterNodes = allNodesData.filter(n => n.tipo === 'capitulo');
             const titleIds = new Set(titleNodes.map(n => n.id));
 
-            // Build title entries — keep ALL nodes, don't deduplicate by label
-            const titles = titleNodes.map(n => ({ id: n.id, label: n.originalLabel.trim(), children: [] }));
+            const titles = titleNodes.map(n => ({ id: n.id, label: n.originalLabel.trim(), numero: n.numero || 0, children: [] }));
 
-            // For each chapter, find direct edge to a title
+            // Assign chapters to titles via hierarchy edges
             const assignedChapters = new Set();
             chapterNodes.forEach(ch => {
-                const chEdges = allEdgesData.filter(e => e.to === ch.id || e.from === ch.id);
-                for (const e of chEdges) {
+                const hierEdges = allEdgesData.filter(e =>
+                    e.edgeType === 'contiene' && (e.to === ch.id || e.from === ch.id)
+                );
+                for (const e of hierEdges) {
                     const otherId = e.from === ch.id ? e.to : e.from;
                     if (titleIds.has(otherId)) {
                         const parentTitle = titles.find(t => t.id === otherId);
                         if (parentTitle) {
-                            parentTitle.children.push({ id: ch.id, label: ch.originalLabel.trim() });
+                            parentTitle.children.push({ id: ch.id, label: ch.originalLabel.trim(), numero: ch.numero || 0 });
                             assignedChapters.add(ch.id);
                             return;
                         }
@@ -298,39 +337,25 @@
                 }
             });
 
-            // For orphan chapters, try to find a title via 2-hop (chapter -> intermediate -> title)
+            // Orphan chapters via any edge
             chapterNodes.filter(ch => !assignedChapters.has(ch.id)).forEach(ch => {
                 const chEdges = allEdgesData.filter(e => e.to === ch.id || e.from === ch.id);
                 for (const e of chEdges) {
                     const midId = e.from === ch.id ? e.to : e.from;
-                    const midEdges = allEdgesData.filter(e2 => e2.to === midId || e2.from === midId);
-                    for (const e2 of midEdges) {
-                        const grandId = e2.from === midId ? e2.to : e2.from;
-                        if (titleIds.has(grandId)) {
-                            const parentTitle = titles.find(t => t.id === grandId);
-                            if (parentTitle) {
-                                parentTitle.children.push({ id: ch.id, label: ch.originalLabel.trim() });
-                                assignedChapters.add(ch.id);
-                                return;
-                            }
+                    if (titleIds.has(midId)) {
+                        const parentTitle = titles.find(t => t.id === midId);
+                        if (parentTitle) {
+                            parentTitle.children.push({ id: ch.id, label: ch.originalLabel.trim(), numero: ch.numero || 0 });
+                            assignedChapters.add(ch.id);
+                            return;
                         }
                     }
                 }
-                // Still orphan — add to an "Otros" section
-                assignedChapters.add(ch.id);
-                titles.push({ id: ch.id, label: ch.originalLabel.trim(), children: [], isOrphan: true });
+                titles.push({ id: ch.id, label: ch.originalLabel.trim(), numero: 0, children: [], isOrphan: true });
             });
 
-            // Sort titles by a natural order based on Roman numeral extraction
-            const romanOrder = {'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,'VIII':8};
-            titles.sort((a, b) => {
-                const matchA = a.label.match(/TITULO\s+(I{1,3}V?|VI{0,3}|IV|V)\b/i);
-                const matchB = b.label.match(/TITULO\s+(I{1,3}V?|VI{0,3}|IV|V)\b/i);
-                const numA = matchA ? (romanOrder[matchA[1]] || 99) : 99;
-                const numB = matchB ? (romanOrder[matchB[1]] || 99) : 99;
-                if (numA !== numB) return numA - numB;
-                return a.label.localeCompare(b.label);
-            });
+            titles.sort((a, b) => a.numero - b.numero || a.label.localeCompare(b.label));
+            titles.forEach(t => t.children.sort((a, b) => a.numero - b.numero));
 
             let html = `<div class="toc-stats">${titleNodes.length} títulos, ${chapterNodes.length} capítulos</div>`;
             titles.forEach(t => {
@@ -341,17 +366,15 @@
                 });
             });
 
-            if (titleNodes.length === 0 && chapterNodes.length === 0) {
+            if (!titleNodes.length && !chapterNodes.length) {
                 html = '<p style="padding:10px; color:#999; font-size:0.85em;">No se encontraron títulos.</p>';
             }
 
             tocBody.innerHTML = html;
 
-            // Click to navigate
             tocBody.querySelectorAll('[data-node]').forEach(el => {
                 el.addEventListener('click', () => {
                     const nodeId = el.dataset.node;
-                    // Ensure it's visible
                     const visIds = new Set(visibleNodes.getIds());
                     if (!visIds.has(nodeId)) {
                         const node = allNodesData.find(n => n.id === nodeId);
@@ -422,8 +445,11 @@
             return margins[level] || 8;
         }
 
-        // --- Colores de alto contraste con texto blanco ---
-        function getNodeColor(level) {
+        // --- Colores por tipo de nodo ---
+        function getNodeColor(node) {
+            if (node.isDefinicion) {
+                return { background: '#8E44AD', border: '#6C3483', highlight: { background: '#A569BD', border: '#8E44AD' } };
+            }
             const colors = {
                 1: { background: '#1B4F72', border: '#154360', highlight: { background: '#2471A3', border: '#1A5276' } },
                 2: { background: '#117A65', border: '#0E6655', highlight: { background: '#148F77', border: '#117A65' } },
@@ -431,11 +457,7 @@
                 4: { background: '#922B21', border: '#7B241C', highlight: { background: '#A93226', border: '#922B21' } },
                 99: { background: '#5D6D7E', border: '#4D5656', highlight: { background: '#7F8C8D', border: '#5D6D7E' } }
             };
-            return colors[level] || colors[99];
-        }
-
-        function getNodeFontColor(level) {
-            return '#FFFFFF';
+            return colors[node.level] || colors[99];
         }
 
         // --- Crear nodo visual ---
@@ -453,71 +475,234 @@
             }
             return {
                 ...node,
-                color: getNodeColor(node.level),
-                font: { color: getNodeFontColor(node.level), size: getNodeSize(node.level) },
+                color: getNodeColor(node),
+                font: { color: '#FFFFFF', size: getNodeSize(node.level) },
                 borderWidth: node.level === 1 ? 3 : 2,
                 margin: getNodeMargin(node.level),
                 physics: true
             };
         }
 
-        // --- Cargar datos ---
+        // --- Cargar datos v2 ---
         async function loadData() {
             try {
-                updateInfoText("Cargando archivos CSV...");
+                updateInfoText("Cargando archivos CSV v2...");
 
-                const nodeCSV = await fetch('nodos.csv');
-                const edgeCSV = await fetch('relaciones.csv');
+                const [nodeCSV, edgeCSV, kpiCSV, temasCSV] = await Promise.all([
+                    fetch('nodos_v2.csv'),
+                    fetch('relaciones_v2.csv'),
+                    fetch('kpi_pot.csv'),
+                    fetch('temas_pot.csv')
+                ]);
 
                 if (!nodeCSV.ok || !edgeCSV.ok) {
                     throw new Error('No se pudieron cargar los archivos CSV');
                 }
 
-                const nodeText = await nodeCSV.text();
-                const edgeText = await edgeCSV.text();
+                const [nodeText, edgeText, kpiText, temasText] = await Promise.all([
+                    nodeCSV.text(), edgeCSV.text(), kpiCSV.text(), temasCSV.text()
+                ]);
 
                 updateInfoText("Procesando datos...");
 
-                const nodeData = Papa.parse(nodeText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    trimHeaders: true
-                }).data;
+                const parseOpts = { header: true, skipEmptyLines: true, trimHeaders: true };
 
+                // Nodes v2: id,etiqueta,nivel,numero,parte,titulo_pot,capitulo_pot,tipo,tema,es_definicion,resumen
+                const nodeData = Papa.parse(nodeText, parseOpts).data;
                 allNodesData = nodeData
-                    .filter(node => node.id && node.id.trim())
-                    .map(node => {
-                        const nivel = node.nivel && node.nivel !== 'N/A' ? parseInt(node.nivel) : 99;
-                        const etiqueta = node.etiqueta || node.id;
+                    .filter(n => n.id && n.id.trim())
+                    .map(n => {
+                        const nivel = n.nivel && n.nivel !== 'N/A' ? parseInt(n.nivel) : 99;
+                        const etiqueta = n.etiqueta || n.id;
+                        const isDef = n.es_definicion === '1';
+                        const temas = n.tema ? n.tema.split('|') : [];
                         return {
-                            id: node.id.trim(),
+                            id: n.id.trim(),
                             label: etiqueta.length > 60 ? etiqueta.substring(0, 60) + '...' : etiqueta,
                             fullLabel: etiqueta,
                             level: nivel,
-                            title: `<b>${LEVEL_NAMES[nivel] || 'Nivel ' + nivel}</b><br>${etiqueta}`,
+                            numero: parseInt(n.numero) || 0,
+                            tipo: (n.tipo || '').trim(),
+                            temas: temas,
+                            isDefinicion: isDef,
+                            tituloPot: n.titulo_pot || '',
+                            capituloPot: n.capitulo_pot || '',
+                            resumen: n.resumen || etiqueta,
+                            title: `<b>${LEVEL_NAMES[nivel] || 'Nivel ' + nivel}</b>${isDef ? ' (Definición)' : ''}<br>${etiqueta}`,
                             originalLabel: etiqueta
                         };
                     });
 
-                const edgeData = Papa.parse(edgeText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    trimHeaders: true
-                }).data;
-
+                // Edges v2: origen_id,destino_id,tipo
+                const edgeData = Papa.parse(edgeText, parseOpts).data;
                 allEdgesData = edgeData
-                    .filter(edge => edge.origen_id && edge.destino_id)
-                    .map((edge, index) => ({
-                        id: `edge_${index}`,
-                        from: edge.origen_id.trim(),
-                        to: edge.destino_id.trim()
-                    }));
+                    .filter(e => e.origen_id && e.destino_id)
+                    .map((e, i) => {
+                        const tipo = (e.tipo || '').trim();
+                        return {
+                            id: `edge_${i}`,
+                            from: e.origen_id.trim(),
+                            to: e.destino_id.trim(),
+                            edgeType: tipo,
+                            dashes: tipo === 'referencia_cruzada' ? [5, 5] : false,
+                            color: tipo === 'referencia_cruzada'
+                                ? { color: '#AF7AC5', highlight: '#8E44AD', opacity: 0.6 }
+                                : { color: '#7F8C8D', highlight: '#2C3E50', opacity: 0.7 },
+                            width: tipo === 'referencia_cruzada' ? 1 : 1.5
+                        };
+                    });
+
+                // KPIs
+                if (kpiCSV.ok) {
+                    allKpiData = Papa.parse(kpiText, parseOpts).data;
+                    renderKPIs();
+                }
+
+                // Temas
+                if (temasCSV.ok) {
+                    allTemasData = Papa.parse(temasText, parseOpts).data
+                        .filter(t => t.tema)
+                        .map(t => ({ tema: t.tema, cantidad: parseInt(t.cantidad_articulos) || 0 }))
+                        .sort((a, b) => b.cantidad - a.cantidad);
+                    renderTemas();
+                    populateTemaFilter();
+                }
 
                 initializeVisualization();
             } catch (error) {
                 console.error("Error al cargar los datos:", error);
                 networkContainer.innerHTML = `<p class='error'>Error al cargar los datos: ${error.message}</p>`;
             }
+        }
+
+        // --- KPIs ---
+        function renderKPIs() {
+            const kpiMap = {};
+            allKpiData.forEach(k => { kpiMap[k.metrica] = parseInt(k.valor) || 0; });
+
+            document.getElementById('kpiBar').innerHTML = `
+                <div class="kpi-card kpi-primary">
+                    <span class="kpi-number">${kpiMap.total_articulos || 0}</span>
+                    <span class="kpi-label">Artículos</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-number">${kpiMap.total_titulos || 0}</span>
+                    <span class="kpi-label">Títulos</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-number">${kpiMap.total_capitulos || 0}</span>
+                    <span class="kpi-label">Capítulos</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-number">${kpiMap.total_definiciones || 0}</span>
+                    <span class="kpi-label">Definiciones</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-number">${kpiMap.total_relaciones || 0}</span>
+                    <span class="kpi-label">Relaciones</span>
+                </div>
+                <div class="kpi-card kpi-accent">
+                    <span class="kpi-number">${kpiMap.referencias_cruzadas || 0}</span>
+                    <span class="kpi-label">Ref. cruzadas</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-number">${kpiMap.total_temas || 0}</span>
+                    <span class="kpi-label">Ejes temáticos</span>
+                </div>
+            `;
+        }
+
+        // --- Temas panel ---
+        function renderTemas() {
+            const panel = document.getElementById('temasPanel');
+            panel.style.display = '';
+            const container = document.getElementById('temasBarras');
+            const maxCount = allTemasData[0]?.cantidad || 1;
+
+            let html = '';
+            allTemasData.forEach(t => {
+                const pct = (t.cantidad / maxCount * 100);
+                html += `
+                <div class="tema-bar-row" data-tema="${escapeHTML(t.tema)}">
+                    <span class="tema-label">${escapeHTML(t.tema)}</span>
+                    <div class="tema-track">
+                        <div class="tema-fill" style="width:${pct}%"></div>
+                    </div>
+                    <span class="tema-count">${t.cantidad}</span>
+                </div>`;
+            });
+            container.innerHTML = html;
+
+            // Click to filter
+            container.querySelectorAll('.tema-bar-row').forEach(row => {
+                row.addEventListener('click', () => {
+                    const tema = row.dataset.tema;
+                    if (currentTemaFilter === tema) {
+                        // Deselect
+                        currentTemaFilter = '';
+                        temaFilter.value = '';
+                        container.querySelectorAll('.tema-bar-row').forEach(r => r.classList.remove('active'));
+                        resetView();
+                    } else {
+                        currentTemaFilter = tema;
+                        temaFilter.value = tema;
+                        container.querySelectorAll('.tema-bar-row').forEach(r => r.classList.remove('active'));
+                        row.classList.add('active');
+                        applyTemaFilter(tema);
+                    }
+                });
+            });
+        }
+
+        function populateTemaFilter() {
+            allTemasData.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.tema;
+                opt.textContent = `${t.tema} (${t.cantidad})`;
+                temaFilter.appendChild(opt);
+            });
+            temaFilter.addEventListener('change', () => {
+                const tema = temaFilter.value;
+                currentTemaFilter = tema;
+                // Sync bar highlight
+                document.querySelectorAll('.tema-bar-row').forEach(r => {
+                    r.classList.toggle('active', r.dataset.tema === tema);
+                });
+                if (tema) {
+                    applyTemaFilter(tema);
+                } else {
+                    resetView();
+                }
+            });
+        }
+
+        function applyTemaFilter(tema) {
+            isSearchMode = true;
+            const matchingNodes = allNodesData.filter(n => n.temas.includes(tema));
+
+            if (!matchingNodes.length) {
+                updateInfoText(`No se encontraron artículos para el tema "${tema}".`);
+                return;
+            }
+
+            // Also show their parent titles/chapters
+            const nodeIdsToShow = new Set(matchingNodes.map(n => n.id));
+            const edgesToShow = [];
+
+            matchingNodes.forEach(n => {
+                allEdgesData.forEach(e => {
+                    if (e.from === n.id || e.to === n.id) {
+                        nodeIdsToShow.add(e.from);
+                        nodeIdsToShow.add(e.to);
+                        edgesToShow.push(e);
+                    }
+                });
+            });
+
+            showNeighborhood(Array.from(nodeIdsToShow), edgesToShow);
+            currentSearchResults = new Set(matchingNodes.map(n => n.id));
+            highlightSearchResults();
+            updateInfoText(`Tema "${tema}": ${matchingNodes.length} artículos + ${nodeIdsToShow.size - matchingNodes.length} nodos relacionados.`);
         }
 
         function initializeVisualization() {
@@ -595,6 +780,9 @@
             if (!node) return;
 
             const connectedEdges = allEdgesData.filter(e => e.from === nodeId || e.to === nodeId);
+            const hierEdges = connectedEdges.filter(e => e.edgeType === 'contiene');
+            const refEdges = connectedEdges.filter(e => e.edgeType === 'referencia_cruzada');
+
             const connectedNodeIds = new Set();
             connectedEdges.forEach(e => {
                 if (e.from !== nodeId) connectedNodeIds.add(e.from);
@@ -603,9 +791,19 @@
 
             const connectedNodes = allNodesData.filter(n => connectedNodeIds.has(n.id));
 
-            // Agrupar conexiones por nivel
+            // Separate hierarchy children vs cross-references
+            const refNodeIds = new Set();
+            refEdges.forEach(e => {
+                if (e.from !== nodeId) refNodeIds.add(e.from);
+                if (e.to !== nodeId) refNodeIds.add(e.to);
+            });
+
+            const hierNodes = connectedNodes.filter(n => !refNodeIds.has(n.id));
+            const crossRefNodes = connectedNodes.filter(n => refNodeIds.has(n.id));
+
+            // Group hierarchy by level
             const byLevel = {};
-            connectedNodes.forEach(cn => {
+            hierNodes.forEach(cn => {
                 const levelName = LEVEL_NAMES[cn.level] || 'Nivel ' + cn.level;
                 if (!byLevel[levelName]) byLevel[levelName] = [];
                 byLevel[levelName].push(cn);
@@ -613,13 +811,22 @@
 
             let html = `
                 <div class="detail-node-title">
-                    <span class="detail-level-badge" style="background-color: ${getNodeColor(node.level).background};">
-                        ${LEVEL_NAMES[node.level] || 'Nivel ' + node.level}
+                    <span class="detail-level-badge" style="background-color: ${getNodeColor(node).background};">
+                        ${LEVEL_NAMES[node.level] || 'Nivel ' + node.level}${node.isDefinicion ? ' (Def.)' : ''}
                     </span>
                     <p>${escapeHTML(node.originalLabel)}</p>
-                </div>
-                <div class="detail-connections">
-                    <h5>${connectedNodes.length} conexiones</h5>`;
+                </div>`;
+
+            // Metadata
+            if (node.temas.length || node.tituloPot || node.capituloPot) {
+                html += '<div class="detail-meta">';
+                if (node.tituloPot) html += `<div class="detail-meta-item"><span class="detail-meta-label">Título:</span> ${escapeHTML(node.tituloPot)}</div>`;
+                if (node.capituloPot) html += `<div class="detail-meta-item"><span class="detail-meta-label">Capítulo:</span> ${escapeHTML(node.capituloPot)}</div>`;
+                if (node.temas.length) html += `<div class="detail-meta-item"><span class="detail-meta-label">Temas:</span> ${node.temas.map(t => `<span class="detail-tema-tag">${escapeHTML(t)}</span>`).join(' ')}</div>`;
+                html += '</div>';
+            }
+
+            html += `<div class="detail-connections"><h5>${connectedNodes.length} conexiones</h5>`;
 
             for (const [levelName, nodes] of Object.entries(byLevel)) {
                 html += `<div class="detail-group"><span class="detail-group-label">${levelName} (${nodes.length})</span><ul>`;
@@ -629,11 +836,18 @@
                 html += `</ul></div>`;
             }
 
+            if (crossRefNodes.length) {
+                html += `<div class="detail-group"><span class="detail-group-label detail-crossref">Referencias cruzadas (${crossRefNodes.length})</span><ul>`;
+                crossRefNodes.forEach(cn => {
+                    html += `<li class="detail-connection-item detail-crossref-item" data-node-id="${cn.id}">${escapeHTML(cn.originalLabel)}</li>`;
+                });
+                html += `</ul></div>`;
+            }
+
             html += `</div>`;
             detailBody.innerHTML = html;
             detailPanel.classList.add('open');
 
-            // Navegar al hacer clic en una conexión
             detailBody.querySelectorAll('.detail-connection-item').forEach(item => {
                 item.addEventListener('click', () => {
                     const targetId = item.dataset.nodeId;
@@ -798,6 +1012,9 @@
             isSearchMode = false;
             exportButton.disabled = true;
             detailPanel.classList.remove('open');
+            currentTemaFilter = '';
+            temaFilter.value = '';
+            document.querySelectorAll('.tema-bar-row').forEach(r => r.classList.remove('active'));
 
             levelButtons.forEach(b => b.classList.remove('active'));
             document.querySelector('.level-btn[data-level="all"]').classList.add('active');
@@ -880,15 +1097,6 @@
                     solver: 'barnesHut'
                 }
             };
-        }
-
-        // =========================================================
-        // UTILIDADES COMPARTIDAS
-        // =========================================================
-        function escapeHTML(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
         }
 
         // =========================================================

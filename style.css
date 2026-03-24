@@ -79,6 +79,185 @@ h1 {
 /* =========================================================
    TAB 1: POT VIGENTE
    ========================================================= */
+
+/* KPI Bar */
+.kpi-bar {
+    display: flex;
+    gap: 8px;
+    padding: 12px 30px;
+    background: linear-gradient(135deg, #1B4F72 0%, #2471A3 100%);
+    flex-shrink: 0;
+    overflow-x: auto;
+    flex-wrap: wrap;
+}
+
+.kpi-loading {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.85em;
+    padding: 8px;
+}
+
+.kpi-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255,255,255,0.12);
+    padding: 10px 18px;
+    border-radius: 8px;
+    min-width: 80px;
+    transition: background 0.2s;
+}
+
+.kpi-card:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.kpi-card.kpi-primary {
+    background: rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.kpi-card.kpi-accent {
+    background: rgba(142,68,173,0.35);
+    border: 1px solid rgba(142,68,173,0.5);
+}
+
+.kpi-number {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+}
+
+.kpi-label {
+    font-size: 0.7em;
+    color: rgba(255,255,255,0.8);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Temas Panel */
+.temas-panel {
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    padding: 12px 30px;
+    flex-shrink: 0;
+}
+
+.temas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.temas-header h4 {
+    margin: 0;
+    font-size: 0.88em;
+    color: #333;
+}
+
+.temas-hint {
+    font-size: 0.75em;
+    color: #999;
+}
+
+.temas-bars {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 4px;
+}
+
+.tema-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.tema-bar-row:hover {
+    background: #f0f7ff;
+}
+
+.tema-bar-row.active {
+    background: #e3f2fd;
+    outline: 2px solid #2471A3;
+}
+
+.tema-label {
+    width: 160px;
+    font-size: 0.78em;
+    color: #444;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.tema-track {
+    flex-grow: 1;
+    height: 14px;
+    background: #f0f0f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.tema-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2471A3, #1B4F72);
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+.tema-count {
+    font-size: 0.75em;
+    font-weight: 700;
+    color: #555;
+    width: 24px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* Detail panel meta */
+.detail-meta {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 8px;
+}
+
+.detail-meta-item {
+    font-size: 0.82em;
+    color: #555;
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.detail-meta-label {
+    font-weight: 600;
+    color: #333;
+}
+
+.detail-tema-tag {
+    display: inline-block;
+    background: #e3f2fd;
+    color: #1565C0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.88em;
+    margin: 1px;
+}
+
+.detail-crossref {
+    color: #8E44AD !important;
+}
+
+.detail-crossref-item {
+    color: #8E44AD;
+    font-style: italic;
+}
+
 .pot-controls {
     background-color: #fff;
     padding: 12px 30px;
@@ -102,6 +281,20 @@ h1 {
     color: #555;
     font-weight: 600;
     white-space: nowrap;
+}
+
+#temaFilter {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.85em;
+    max-width: 220px;
+}
+
+#temaFilter:focus {
+    outline: none;
+    border-color: #1B4F72;
+    box-shadow: 0 0 0 2px rgba(27,79,114,0.15);
 }
 
 .level-filters {

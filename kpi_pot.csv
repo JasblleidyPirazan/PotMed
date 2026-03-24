@@ -1,0 +1,11 @@
+metrica,valor,descripcion
+total_nodos,676,Total de nodos únicos
+total_articulos,624,Artículos del POT
+total_titulos,19,Títulos del POT
+total_capitulos,19,Capítulos del POT
+total_partes,0,Partes del POT
+total_definiciones,44,Definiciones formales identificadas
+total_relaciones,747,Total de relaciones
+relaciones_jerarquicas,308,Relaciones jerárquicas (contiene)
+referencias_cruzadas,439,Referencias cruzadas entre artículos
+total_temas,25,Ejes temáticos identificados
