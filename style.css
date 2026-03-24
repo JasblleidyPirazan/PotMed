@@ -454,44 +454,48 @@ h1 {
 
 /* Introducción */
 .revision-intro {
-    background: linear-gradient(135deg, #1B4F72 0%, #2471A3 100%);
-    color: #fff;
-    padding: 28px 30px 20px;
+    background: #f8f9fa;
+    color: #444;
+    padding: 12px 30px 10px;
     flex-shrink: 0;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .intro-content h2 {
-    margin: 0 0 12px 0;
-    font-size: 1.3em;
+    margin: 0 0 4px 0;
+    font-size: 0.95em;
     font-weight: 700;
+    color: #1B4F72;
 }
 
 .intro-text {
-    margin: 0 0 16px 0;
-    font-size: 0.92em;
-    line-height: 1.65;
-    opacity: 0.95;
+    margin: 0 0 6px 0;
+    font-size: 0.78em;
+    line-height: 1.5;
+    color: #666;
     max-width: 900px;
 }
 
 .cc-license {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    background: rgba(255,255,255,0.12);
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 0.8em;
-    line-height: 1.5;
+    align-items: center;
+    gap: 8px;
+    background: rgba(27,79,114,0.06);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.68em;
+    line-height: 1.4;
+    color: #777;
 }
 
 .cc-license img {
     flex-shrink: 0;
-    margin-top: 2px;
+    width: 60px;
+    height: auto;
 }
 
 .cc-license a {
-    color: #AED6F1;
+    color: #1B4F72;
     text-decoration: underline;
 }
 
@@ -777,6 +781,7 @@ h1 {
     position: sticky;
     top: 0;
     z-index: 3;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
 
 .data-table tbody td {
@@ -1437,16 +1442,24 @@ footer p {
         font-size: 0.7em;
     }
 
+    /* Tab 1 mobile: allow vertical scroll */
+    #tab-pot-vigente {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     /* Network & panels */
     .network-wrapper {
         flex-direction: column;
+        overflow: visible;
+        min-height: 450px;
     }
 
     .toc-panel {
         position: relative;
         width: 100% !important;
         height: auto;
-        max-height: 200px;
+        max-height: 180px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
@@ -1457,6 +1470,7 @@ footer p {
 
     #network {
         min-height: 350px;
+        height: 50vh;
     }
 
     .legend {
@@ -1474,23 +1488,27 @@ footer p {
 
     /* Revisión de Mediano Plazo tab */
     .revision-intro {
-        padding: 16px 12px;
+        padding: 10px 12px 8px;
     }
 
     .intro-content h2 {
-        font-size: 1.05em;
+        font-size: 0.85em;
     }
 
     .intro-text {
-        font-size: 0.84em;
+        font-size: 0.72em;
     }
 
     .cc-license {
         flex-direction: column;
         align-items: center;
         text-align: center;
-        font-size: 0.72em;
-        padding: 10px 12px;
+        font-size: 0.62em;
+        padding: 6px 8px;
+    }
+
+    .cc-license img {
+        width: 50px;
     }
 
     .analysis-nav {
