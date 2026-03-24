@@ -1,67 +1,167 @@
+/* =========================================================
+   BASE
+   ========================================================= */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: #f0f2f5;
     color: #333;
     display: flex;
     flex-direction: column;
     height: 100vh;
 }
 
+/* =========================================================
+   HEADER Y NAVEGACIÓN
+   ========================================================= */
 .header {
     background-color: #fff;
-    padding: 15px 30px;
+    padding: 12px 30px;
     border-bottom: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
+    z-index: 100;
 }
 
 h1 {
     margin: 0;
-    font-size: 1.5em;
+    font-size: 1.3em;
     color: #0056b3;
+    font-weight: 700;
 }
 
-.controls-container {
+.tab-nav {
+    display: flex;
+    gap: 4px;
+}
+
+.tab-btn {
+    padding: 8px 20px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background-color: #e9ecef;
+    color: #495057;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background-color: #dee2e6;
+    color: #212529;
+}
+
+.tab-btn.active {
+    background-color: #0056b3;
+    color: #fff;
+    border-color: #0056b3;
+}
+
+/* =========================================================
+   TABS
+   ========================================================= */
+.tab-content {
+    display: none;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.tab-content.active {
+    display: flex;
+}
+
+/* =========================================================
+   TAB 1: POT VIGENTE
+   ========================================================= */
+.pot-controls {
+    background-color: #fff;
+    padding: 12px 30px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
+}
+
+.filter-group label {
+    font-size: 0.9em;
+    color: #555;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.level-filters {
+    display: flex;
+    gap: 4px;
+}
+
+.level-btn {
+    padding: 6px 14px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    background-color: #fff;
+    color: #555;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.2s;
+}
+
+.level-btn:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    color: #333;
+}
+
+.level-btn.active {
+    background-color: #0056b3;
+    color: #fff;
+    border-color: #0056b3;
 }
 
 .search-container {
     display: flex;
     align-items: center;
+    gap: 8px;
 }
 
 #searchInput {
-    padding: 8px 12px;
+    padding: 8px 14px;
     border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1em;
+    border-radius: 6px;
+    font-size: 0.95em;
     width: 300px;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-button {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 4px;
-    color: white;
-    background-color: #007bff;
-    cursor: pointer;
-    font-size: 1em;
-    transition: background-color 0.2s;
-}
-
-button:hover {
-    background-color: #0056b3;
+#searchInput:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.15);
 }
 
 #resetButton {
+    padding: 8px 16px;
     background-color: #6c757d;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
 }
 
 #resetButton:hover {
@@ -70,18 +170,323 @@ button:hover {
 
 .info-panel {
     background-color: #e9f4ff;
-    padding: 10px 30px;
+    padding: 8px 30px;
     border-bottom: 1px solid #ddd;
-    font-size: 0.9em;
+    border-left: 4px solid #0056b3;
+    font-size: 0.85em;
     flex-shrink: 0;
+    color: #0056b3;
+}
+
+.network-wrapper {
+    position: relative;
+    flex-grow: 1;
+    overflow: hidden;
 }
 
 #network {
     width: 100%;
-    flex-grow: 1;
-    border-top: 1px solid #ddd;
+    height: 100%;
 }
 
+/* Leyenda */
+.legend {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 14px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    font-size: 0.8em;
+    z-index: 10;
+    min-width: 180px;
+    transition: opacity 0.3s ease;
+}
+
+.legend h4 {
+    margin: 0 0 8px 0;
+    color: #0056b3;
+    font-size: 0.95em;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,0.2);
+    flex-shrink: 0;
+}
+
+.legend-instructions {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    font-size: 0.85em;
+    color: #666;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   TAB 2: REPOSITORIO DE ANÁLISIS
+   ========================================================= */
+.repo-header {
+    background-color: #fff;
+    padding: 20px 30px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.repo-title-section h2 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #0056b3;
+}
+
+.repo-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 0.85em;
+    color: #777;
+}
+
+#repoSearchInput {
+    padding: 8px 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.95em;
+    width: 280px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#repoSearchInput:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.15);
+}
+
+/* Stats */
+.repo-stats {
+    display: flex;
+    gap: 16px;
+    padding: 16px 30px;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 12px 24px;
+    border-radius: 8px;
+    min-width: 100px;
+}
+
+.stat-number {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: #0056b3;
+}
+
+.stat-label {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* Contenedor del repositorio */
+.repo-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 20px 30px;
+}
+
+/* Categorías */
+.repo-category {
+    margin-bottom: 24px;
+}
+
+.category-header {
+    background-color: #fff;
+    padding: 14px 20px;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.category-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.category-title h3 {
+    margin: 0;
+    font-size: 1.05em;
+    color: #333;
+}
+
+.doc-count {
+    font-size: 0.8em;
+    color: #888;
+    background-color: #f0f0f0;
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+.category-docs {
+    background-color: #fff;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-top: 1px solid #eee;
+}
+
+.empty-category {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+    font-size: 0.9em;
+}
+
+.empty-category code {
+    background-color: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+/* Tarjetas de documentos */
+.doc-card {
+    display: flex;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.15s;
+}
+
+.doc-card:last-child {
+    border-bottom: none;
+}
+
+.doc-card:hover {
+    background-color: #f8f9ff;
+}
+
+.doc-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75em;
+    color: #fff;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+}
+
+.icon-excel {
+    background-color: #217346;
+}
+
+.icon-ppt {
+    background-color: #D24726;
+}
+
+.icon-pdf {
+    background-color: #E44D3A;
+}
+
+.icon-word {
+    background-color: #2B579A;
+}
+
+.icon-default {
+    background-color: #6c757d;
+}
+
+.doc-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.doc-info h4 {
+    margin: 0 0 6px 0;
+    font-size: 0.95em;
+    color: #222;
+}
+
+.doc-resumen {
+    margin: 0 0 10px 0;
+    font-size: 0.85em;
+    color: #555;
+    line-height: 1.5;
+}
+
+.doc-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.8em;
+}
+
+.doc-type {
+    background-color: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.doc-date,
+.doc-author {
+    color: #888;
+}
+
+.doc-link {
+    color: #0056b3;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: auto;
+    transition: color 0.2s;
+}
+
+.doc-link:hover {
+    color: #003d82;
+    text-decoration: underline;
+}
+
+.doc-link-pending {
+    color: #bbb;
+    font-style: italic;
+    margin-left: auto;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
 footer {
     background-color: #343a40;
     color: white;
@@ -92,42 +497,20 @@ footer {
 
 footer p {
     margin: 0;
-    font-size: 0.9em;
+    font-size: 0.85em;
 }
 
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
 .error {
     padding: 30px;
     text-align: center;
-    font-size: 1.2em;
+    font-size: 1.1em;
     color: #D8000C;
     background-color: #FFD2D2;
-}
-
-.legend {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(255, 255, 255, 0.95);
-    padding: 15px;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    font-size: 0.85em;
-    z-index: 1000;
-    min-width: 200px;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.legend-color {
-    width: 20px;
-    height: 20px;
-    margin-right: 10px;
-    border-radius: 3px;
-    border: 1px solid #333;
+    margin: 20px;
 }
 
 .loading {
@@ -135,83 +518,14 @@ footer p {
     justify-content: center;
     align-items: center;
     height: 200px;
-    font-size: 1.1em;
+    font-size: 1em;
     color: #666;
 }
 
-/* Estilos adicionales para mejorar la experiencia del usuario */
-.search-container input:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-}
-
-.legend h4 {
-    margin: 0 0 10px 0;
-    color: #0056b3;
-    font-size: 0.9em;
-}
-
-.info-panel {
-    border-left: 4px solid #007bff;
-}
-
-/* Animaciones suaves */
-.legend {
-    transition: opacity 0.3s ease;
-}
-
-.legend:hover {
-    opacity: 1;
-}
-
-/* Responsive design para pantallas pequeñas */
-@media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        gap: 15px;
-        padding: 15px;
-    }
-    
-    .controls-container {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    #searchInput {
-        width: 250px;
-    }
-    
-    .legend {
-        position: relative;
-        top: auto;
-        right: auto;
-        margin: 10px;
-        min-width: auto;
-    }
-    
-    h1 {
-        font-size: 1.3em;
-        text-align: center;
-    }
-}
-
-/* Mejoras para accesibilidad */
-button:focus,
-input:focus {
-    outline: 2px solid #007bff;
-    outline-offset: 2px;
-}
-
-.legend-item:last-child {
-    margin-bottom: 0;
-}
-
-/* Estilos para el estado de carga */
 .loading::after {
     content: '';
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     margin-left: 10px;
     border: 2px solid #666;
     border-top-color: transparent;
@@ -220,7 +534,117 @@ input:focus {
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
+    to { transform: rotate(360deg); }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px 15px;
     }
+
+    h1 {
+        font-size: 1.1em;
+        text-align: center;
+    }
+
+    .tab-nav {
+        width: 100%;
+    }
+
+    .tab-btn {
+        flex: 1;
+        text-align: center;
+        padding: 8px 10px;
+        font-size: 0.85em;
+    }
+
+    .pot-controls {
+        flex-direction: column;
+        padding: 10px 15px;
+        gap: 10px;
+    }
+
+    .filter-group {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .level-filters {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .level-btn {
+        flex: 1;
+        text-align: center;
+    }
+
+    .search-container {
+        width: 100%;
+    }
+
+    #searchInput {
+        width: 100%;
+        flex: 1;
+    }
+
+    .legend {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin: 10px;
+        min-width: auto;
+    }
+
+    .repo-header {
+        padding: 15px;
+    }
+
+    #repoSearchInput {
+        width: 100%;
+    }
+
+    .repo-stats {
+        padding: 12px 15px;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        flex: 1;
+        min-width: 80px;
+        padding: 10px 12px;
+    }
+
+    .repo-container {
+        padding: 15px;
+    }
+
+    .doc-card {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .doc-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .doc-link,
+    .doc-link-pending {
+        margin-left: 0;
+    }
+}
+
+/* Accesibilidad */
+button:focus,
+input:focus {
+    outline: 2px solid #0056b3;
+    outline-offset: 2px;
 }

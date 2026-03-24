@@ -1,0 +1,70 @@
+{
+  "categorias": [
+    {
+      "id": "componente-general",
+      "nombre": "Componente General",
+      "color": "#2B7CE9",
+      "documentos": [
+        {
+          "titulo": "Diagnóstico del Modelo de Ocupación Territorial",
+          "tipo": "excel",
+          "resumen": "Análisis del estado actual del modelo de ocupación definido en el POT vigente. Incluye indicadores de cumplimiento, brechas identificadas y tendencias de crecimiento urbano.",
+          "enlace": "",
+          "fecha": "2026-03-01",
+          "autor": "Equipo técnico"
+        },
+        {
+          "titulo": "Evaluación de la Clasificación del Suelo",
+          "tipo": "powerpoint",
+          "resumen": "Presentación de hallazgos sobre la clasificación del suelo urbano, rural y de expansión. Compara lo planificado vs. lo ejecutado en el periodo de vigencia.",
+          "enlace": "",
+          "fecha": "2026-03-10",
+          "autor": "Equipo técnico"
+        }
+      ]
+    },
+    {
+      "id": "componente-urbano",
+      "nombre": "Componente Urbano",
+      "color": "#5CB85C",
+      "documentos": [
+        {
+          "titulo": "Revisión de Sistemas Estructurantes Urbanos",
+          "tipo": "excel",
+          "resumen": "Matriz de evaluación de los sistemas estructurantes: movilidad, espacio público, equipamientos y servicios públicos. Incluye métricas de cobertura y déficit.",
+          "enlace": "",
+          "fecha": "2026-02-15",
+          "autor": "Equipo técnico"
+        }
+      ]
+    },
+    {
+      "id": "componente-rural",
+      "nombre": "Componente Rural",
+      "color": "#F0AD4E",
+      "documentos": [
+        {
+          "titulo": "Análisis de la Estructura Ecológica Rural",
+          "tipo": "powerpoint",
+          "resumen": "Evaluación del estado de conservación de áreas protegidas, corredores ecológicos y suelos de protección en la zona rural del municipio.",
+          "enlace": "",
+          "fecha": "2026-02-20",
+          "autor": "Equipo técnico"
+        }
+      ]
+    },
+    {
+      "id": "instrumentos-gestion",
+      "nombre": "Instrumentos de Gestión",
+      "color": "#D9534F",
+      "documentos": []
+    },
+    {
+      "id": "seguimiento-evaluacion",
+      "nombre": "Seguimiento y Evaluación",
+      "color": "#8E44AD",
+      "documentos": []
+    }
+  ],
+  "instrucciones": "Para agregar documentos: 1) Sube el archivo a Google Drive o a la carpeta /docs del repositorio GitHub. 2) Copia el enlace de descarga. 3) Agrega una entrada en la categoría correspondiente con título, tipo (excel/powerpoint/pdf/word), resumen, enlace y fecha."
+}
