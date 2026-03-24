@@ -274,49 +274,74 @@
         });
 
         function buildTOC() {
-            // Get unique titles (level 1), chapters (level 2), group by hierarchy
-            const titles = [];
-            const titleSet = new Set();
-            allNodesData.filter(n => n.level === 1).forEach(n => {
-                const key = n.originalLabel.trim();
-                if (!titleSet.has(key)) {
-                    titleSet.add(key);
-                    titles.push({ id: n.id, label: key, children: [] });
-                }
-            });
+            const titleNodes = allNodesData.filter(n => n.level === 1);
+            const chapterNodes = allNodesData.filter(n => n.level === 2);
+            const titleIds = new Set(titleNodes.map(n => n.id));
 
-            // Find chapters connected to titles
-            const chapterSet = new Set();
-            allNodesData.filter(n => n.level === 2).forEach(n => {
-                const key = n.originalLabel.trim();
-                if (!chapterSet.has(key)) {
-                    chapterSet.add(key);
-                    // Find which title this chapter connects to
-                    const edge = allEdgesData.find(e => e.to === n.id || e.from === n.id);
-                    if (edge) {
-                        const parentId = edge.from === n.id ? edge.to : edge.from;
-                        const parentTitle = titles.find(t => t.id === parentId);
+            // Build title entries — keep ALL nodes, don't deduplicate by label
+            const titles = titleNodes.map(n => ({ id: n.id, label: n.originalLabel.trim(), children: [] }));
+
+            // For each chapter, find direct edge to a title
+            const assignedChapters = new Set();
+            chapterNodes.forEach(ch => {
+                const chEdges = allEdgesData.filter(e => e.to === ch.id || e.from === ch.id);
+                for (const e of chEdges) {
+                    const otherId = e.from === ch.id ? e.to : e.from;
+                    if (titleIds.has(otherId)) {
+                        const parentTitle = titles.find(t => t.id === otherId);
                         if (parentTitle) {
-                            parentTitle.children.push({ id: n.id, label: key });
+                            parentTitle.children.push({ id: ch.id, label: ch.originalLabel.trim() });
+                            assignedChapters.add(ch.id);
                             return;
                         }
                     }
-                    // Orphan chapter — add to last title or standalone
-                    if (titles.length > 0) {
-                        titles[titles.length - 1].children.push({ id: n.id, label: key });
-                    }
                 }
             });
 
-            let html = '';
+            // For orphan chapters, try to find a title via 2-hop (chapter -> intermediate -> title)
+            chapterNodes.filter(ch => !assignedChapters.has(ch.id)).forEach(ch => {
+                const chEdges = allEdgesData.filter(e => e.to === ch.id || e.from === ch.id);
+                for (const e of chEdges) {
+                    const midId = e.from === ch.id ? e.to : e.from;
+                    const midEdges = allEdgesData.filter(e2 => e2.to === midId || e2.from === midId);
+                    for (const e2 of midEdges) {
+                        const grandId = e2.from === midId ? e2.to : e2.from;
+                        if (titleIds.has(grandId)) {
+                            const parentTitle = titles.find(t => t.id === grandId);
+                            if (parentTitle) {
+                                parentTitle.children.push({ id: ch.id, label: ch.originalLabel.trim() });
+                                assignedChapters.add(ch.id);
+                                return;
+                            }
+                        }
+                    }
+                }
+                // Still orphan — add to an "Otros" section
+                assignedChapters.add(ch.id);
+                titles.push({ id: ch.id, label: ch.originalLabel.trim(), children: [], isOrphan: true });
+            });
+
+            // Sort titles by a natural order based on Roman numeral extraction
+            const romanOrder = {'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,'VIII':8};
+            titles.sort((a, b) => {
+                const matchA = a.label.match(/TITULO\s+(I{1,3}V?|VI{0,3}|IV|V)\b/i);
+                const matchB = b.label.match(/TITULO\s+(I{1,3}V?|VI{0,3}|IV|V)\b/i);
+                const numA = matchA ? (romanOrder[matchA[1]] || 99) : 99;
+                const numB = matchB ? (romanOrder[matchB[1]] || 99) : 99;
+                if (numA !== numB) return numA - numB;
+                return a.label.localeCompare(b.label);
+            });
+
+            let html = `<div class="toc-stats">${titleNodes.length} títulos, ${chapterNodes.length} capítulos</div>`;
             titles.forEach(t => {
-                html += `<div class="toc-title" data-node="${t.id}">${escapeHTML(t.label)}</div>`;
-                t.children.forEach(ch => {
+                const cssClass = t.isOrphan ? 'toc-chapter' : 'toc-title';
+                html += `<div class="${cssClass}" data-node="${t.id}">${escapeHTML(t.label)}</div>`;
+                (t.children || []).forEach(ch => {
                     html += `<div class="toc-chapter" data-node="${ch.id}">${escapeHTML(ch.label)}</div>`;
                 });
             });
 
-            if (!html) {
+            if (titleNodes.length === 0 && chapterNodes.length === 0) {
                 html = '<p style="padding:10px; color:#999; font-size:0.85em;">No se encontraron títulos.</p>';
             }
 

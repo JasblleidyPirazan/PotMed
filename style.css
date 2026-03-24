@@ -899,6 +899,13 @@ h1 {
     padding: 8px 0;
 }
 
+.toc-stats {
+    padding: 6px 14px;
+    font-size: 0.72em;
+    color: #999;
+    border-bottom: 1px solid #f0f0f0;
+}
+
 .toc-title {
     padding: 8px 14px;
     font-size: 0.82em;
