@@ -15,7 +15,7 @@
         <h1>POT Medellín - Panel de Análisis</h1>
         <nav class="tab-nav">
             <button class="tab-btn active" data-tab="pot-vigente">POT Vigente</button>
-            <button class="tab-btn" data-tab="repositorio">Repositorio de Análisis</button>
+            <button class="tab-btn" data-tab="repositorio">Análisis de Revisión de Mediano Plazo</button>
         </nav>
     </div>
 
@@ -46,6 +46,17 @@
         </div>
 
         <div class="network-wrapper">
+            <!-- Panel Índice del POT -->
+            <div class="toc-panel" id="tocPanel">
+                <div class="toc-header">
+                    <h4>Estructura del POT</h4>
+                    <button class="toc-toggle" id="tocToggle" title="Mostrar/ocultar índice">&#9776;</button>
+                </div>
+                <div class="toc-body" id="tocBody">
+                    <div class="loading" style="height:80px; font-size:0.8em;">Cargando índice...</div>
+                </div>
+            </div>
+
             <div id="network">
                 <div class="loading">Cargando visualización del POT de Medellín...</div>
             </div>
@@ -94,29 +105,109 @@
     </div>
 
     <!-- ============================================ -->
-    <!-- TAB 2: REPOSITORIO DE ANÁLISIS              -->
+    <!-- TAB 2: ANÁLISIS DE REVISIÓN DE MEDIANO PLAZO -->
     <!-- ============================================ -->
     <div id="tab-repositorio" class="tab-content">
-        <div class="repo-header">
-            <div class="repo-title-section">
-                <h2>Repositorio de Análisis - Revisión de Mediano Plazo</h2>
-                <p class="repo-subtitle">Organización de hallazgos y documentos de la revisión del POT</p>
-            </div>
-            <div class="repo-search">
-                <input type="text" id="repoSearchInput" placeholder="Buscar en el repositorio...">
+
+        <!-- Introducción y licencia -->
+        <div class="revision-intro">
+            <div class="intro-content">
+                <h2>Análisis de Revisión de Mediano Plazo del POT de Medellín</h2>
+                <p class="intro-text">
+                    Este es un <strong>ejercicio preliminar de gestión del conocimiento y análisis</strong> orientado
+                    a la discusión pública sobre la revisión de mediano plazo del Plan de Ordenamiento Territorial
+                    (POT) de Medellín (Acuerdo 48 de 2014). El presente consolidado sistematiza los cambios propuestos,
+                    identifica nuevos conceptos normativos y cruza las modificaciones con las demandas comunitarias,
+                    con el fin de facilitar una lectura crítica, informada y participativa del proceso de revisión.
+                </p>
+                <div class="cc-license">
+                    <img src="https://licensebuttons.net/l/by-sa/4.0/88x31.png" alt="CC BY-SA 4.0" width="88" height="31">
+                    <span>
+                        Este trabajo está bajo licencia
+                        <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.es" target="_blank" rel="noopener noreferrer">
+                            Creative Commons Atribución-CompartirIgual 4.0 Internacional (CC BY-SA 4.0)</a>.
+                        Si utiliza estos datos o visualizaciones, debe citar la fuente:
+                        <strong>Pirazán García, J. (2026). Análisis de Revisión de Mediano Plazo del POT de Medellín. Ejercicio preliminar de gestión del conocimiento.</strong>
+                    </span>
+                </div>
             </div>
         </div>
 
-        <div class="repo-stats" id="repoStats"></div>
+        <!-- Sub-navegación de secciones -->
+        <div class="analysis-nav">
+            <button class="analysis-tab active" data-section="resumen">Resumen Cuantitativo</button>
+            <button class="analysis-tab" data-section="base">Base de Datos (299 cambios)</button>
+            <button class="analysis-tab" data-section="conceptos">Nuevos Conceptos</button>
+            <button class="analysis-tab" data-section="cruce">Cruce Comunitario</button>
+        </div>
 
-        <div class="repo-container" id="repoContainer">
-            <div class="loading">Cargando repositorio...</div>
+        <!-- SECCIÓN: Resumen Cuantitativo -->
+        <div class="analysis-section active" id="section-resumen">
+            <div class="section-header">
+                <h3>Resumen Cuantitativo de Cambios por Sistema y Bloque</h3>
+                <p>Distribución de los 299 cambios identificados, clasificados por tipo: Forma, Fondo, Sin Cambio e Indeterminado.</p>
+            </div>
+            <div class="resumen-global-stats" id="resumenGlobalStats"></div>
+            <div class="chart-container">
+                <div class="chart-box" id="chartBarras"></div>
+                <div class="chart-box" id="chartTipoPie"></div>
+            </div>
+            <div class="resumen-table-wrapper">
+                <table class="data-table" id="resumenTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: Base de Datos -->
+        <div class="analysis-section" id="section-base">
+            <div class="section-header">
+                <div class="section-header-row">
+                    <div>
+                        <h3>Base de Datos Completa de Cambios</h3>
+                        <p>299 cambios identificados en la revisión. Filtra por sistema, tipo o busca por tema.</p>
+                    </div>
+                    <div class="base-filters">
+                        <select id="filterSistema"><option value="">Todos los sistemas</option></select>
+                        <select id="filterTipo"><option value="">Todos los tipos</option></select>
+                        <input type="text" id="filterTexto" placeholder="Buscar en cambios...">
+                    </div>
+                </div>
+            </div>
+            <div class="base-count" id="baseCount"></div>
+            <div class="base-table-wrapper" id="baseTableWrapper">
+                <table class="data-table data-table-compact" id="baseTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: Nuevos Conceptos -->
+        <div class="analysis-section" id="section-conceptos">
+            <div class="section-header">
+                <h3>Nuevos Conceptos e Innovaciones Normativas</h3>
+                <p>19 conceptos o categorías nuevas introducidas en la propuesta de revisión del POT.</p>
+            </div>
+            <div class="conceptos-grid" id="conceptosGrid"></div>
+        </div>
+
+        <!-- SECCIÓN: Cruce Comunitario -->
+        <div class="analysis-section" id="section-cruce">
+            <div class="section-header">
+                <h3>Cruce con Demandas Comunitarias</h3>
+                <p>Análisis de cómo responde la propuesta de revisión a las principales demandas de las comunidades de Medellín.</p>
+            </div>
+            <div class="cruce-legend" id="cruceLegend"></div>
+            <div class="cruce-grid" id="cruceGrid"></div>
         </div>
     </div>
 
     <!-- FOOTER -->
     <footer>
         <p>Desarrollado por Jasblleidy Pirazán García - POT Medellín Dashboard</p>
+        <p class="footer-cc">Contenido bajo licencia <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.es" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a> - Citar fuente al reutilizar</p>
     </footer>
 
     <script>
@@ -170,6 +261,89 @@
         detailClose.addEventListener('click', () => {
             detailPanel.classList.remove('open');
         });
+
+        // --- Índice / TOC ---
+        const tocPanel = document.getElementById('tocPanel');
+        const tocBody = document.getElementById('tocBody');
+        const tocToggle = document.getElementById('tocToggle');
+        let tocVisible = true;
+
+        tocToggle.addEventListener('click', () => {
+            tocVisible = !tocVisible;
+            tocPanel.classList.toggle('collapsed', !tocVisible);
+        });
+
+        function buildTOC() {
+            // Get unique titles (level 1), chapters (level 2), group by hierarchy
+            const titles = [];
+            const titleSet = new Set();
+            allNodesData.filter(n => n.level === 1).forEach(n => {
+                const key = n.originalLabel.trim();
+                if (!titleSet.has(key)) {
+                    titleSet.add(key);
+                    titles.push({ id: n.id, label: key, children: [] });
+                }
+            });
+
+            // Find chapters connected to titles
+            const chapterSet = new Set();
+            allNodesData.filter(n => n.level === 2).forEach(n => {
+                const key = n.originalLabel.trim();
+                if (!chapterSet.has(key)) {
+                    chapterSet.add(key);
+                    // Find which title this chapter connects to
+                    const edge = allEdgesData.find(e => e.to === n.id || e.from === n.id);
+                    if (edge) {
+                        const parentId = edge.from === n.id ? edge.to : edge.from;
+                        const parentTitle = titles.find(t => t.id === parentId);
+                        if (parentTitle) {
+                            parentTitle.children.push({ id: n.id, label: key });
+                            return;
+                        }
+                    }
+                    // Orphan chapter — add to last title or standalone
+                    if (titles.length > 0) {
+                        titles[titles.length - 1].children.push({ id: n.id, label: key });
+                    }
+                }
+            });
+
+            let html = '';
+            titles.forEach(t => {
+                html += `<div class="toc-title" data-node="${t.id}">${escapeHTML(t.label)}</div>`;
+                t.children.forEach(ch => {
+                    html += `<div class="toc-chapter" data-node="${ch.id}">${escapeHTML(ch.label)}</div>`;
+                });
+            });
+
+            if (!html) {
+                html = '<p style="padding:10px; color:#999; font-size:0.85em;">No se encontraron títulos.</p>';
+            }
+
+            tocBody.innerHTML = html;
+
+            // Click to navigate
+            tocBody.querySelectorAll('[data-node]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const nodeId = el.dataset.node;
+                    // Ensure it's visible
+                    const visIds = new Set(visibleNodes.getIds());
+                    if (!visIds.has(nodeId)) {
+                        const node = allNodesData.find(n => n.id === nodeId);
+                        if (node) {
+                            visibleNodes.add(createVisNode(node));
+                            updateVisibleEdges();
+                        }
+                    }
+                    expandNode(nodeId);
+                    if (network) {
+                        network.selectNodes([nodeId]);
+                        network.focus(nodeId, { scale: 1.2, animation: { duration: 500 } });
+                    }
+                    showNodeDetail(nodeId);
+                });
+            });
+        }
 
         // --- Filtros por nivel ---
         levelButtons.forEach(btn => {
@@ -343,6 +517,7 @@
             resetButton.addEventListener('click', resetView);
             exportButton.addEventListener('click', exportSearchResults);
 
+            buildTOC();
             updateInfoText();
         }
 
@@ -683,162 +858,316 @@
         }
 
         // =========================================================
-        // TAB 2: REPOSITORIO DE ANÁLISIS
+        // UTILIDADES COMPARTIDAS
         // =========================================================
-        const repoContainer = document.getElementById('repoContainer');
-        const repoStats = document.getElementById('repoStats');
-        const repoSearchInput = document.getElementById('repoSearchInput');
-        let repoData = null;
-
-        async function loadRepositorio() {
-            try {
-                const response = await fetch('repositorio.json');
-                if (!response.ok) throw new Error('No se pudo cargar el repositorio');
-                repoData = await response.json();
-                renderRepositorio(repoData.categorias);
-            } catch (error) {
-                console.error("Error cargando repositorio:", error);
-                repoContainer.innerHTML = `<p class='error'>Error al cargar el repositorio: ${error.message}</p>`;
-            }
-        }
-
-        function renderRepositorio(categorias) {
-            // Stats
-            let totalDocs = 0;
-            let categoriasConDocs = 0;
-            categorias.forEach(cat => {
-                totalDocs += cat.documentos.length;
-                if (cat.documentos.length > 0) categoriasConDocs++;
-            });
-
-            repoStats.innerHTML = `
-                <div class="stat-card">
-                    <span class="stat-number">${categorias.length}</span>
-                    <span class="stat-label">Categorías</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">${totalDocs}</span>
-                    <span class="stat-label">Documentos</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">${categoriasConDocs}</span>
-                    <span class="stat-label">Con hallazgos</span>
-                </div>
-            `;
-
-            // Categorías y documentos
-            let html = '';
-            categorias.forEach(cat => {
-                html += `
-                <div class="repo-category">
-                    <div class="category-header" style="border-left: 4px solid ${cat.color};">
-                        <div class="category-title">
-                            <span class="category-dot" style="background-color: ${cat.color};"></span>
-                            <h3>${cat.nombre}</h3>
-                            <span class="doc-count">${cat.documentos.length} documento${cat.documentos.length !== 1 ? 's' : ''}</span>
-                        </div>
-                    </div>
-                    <div class="category-docs">`;
-
-                if (cat.documentos.length === 0) {
-                    html += `<div class="empty-category">Sin documentos aún. Agrega documentos editando <code>repositorio.json</code></div>`;
-                } else {
-                    cat.documentos.forEach(doc => {
-                        const iconClass = getDocIcon(doc.tipo);
-                        const enlaceHTML = doc.enlace
-                            ? `<a href="${sanitizeURL(doc.enlace)}" target="_blank" rel="noopener noreferrer" class="doc-link">Abrir documento</a>`
-                            : `<span class="doc-link-pending">Enlace pendiente</span>`;
-
-                        html += `
-                        <div class="doc-card" data-search="${doc.titulo.toLowerCase()} ${doc.resumen.toLowerCase()}">
-                            <div class="doc-icon ${iconClass}">${getDocIconText(doc.tipo)}</div>
-                            <div class="doc-info">
-                                <h4>${escapeHTML(doc.titulo)}</h4>
-                                <p class="doc-resumen">${escapeHTML(doc.resumen)}</p>
-                                <div class="doc-meta">
-                                    <span class="doc-type">${doc.tipo.toUpperCase()}</span>
-                                    <span class="doc-date">${doc.fecha}</span>
-                                    <span class="doc-author">${escapeHTML(doc.autor)}</span>
-                                    ${enlaceHTML}
-                                </div>
-                            </div>
-                        </div>`;
-                    });
-                }
-
-                html += `</div></div>`;
-            });
-
-            repoContainer.innerHTML = html;
-        }
-
-        function sanitizeURL(url) {
-            try {
-                const parsed = new URL(url);
-                if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
-                    return parsed.href;
-                }
-            } catch (e) {}
-            return '#';
-        }
-
         function escapeHTML(str) {
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
         }
 
-        function getDocIcon(tipo) {
-            const icons = {
-                'excel': 'icon-excel',
-                'powerpoint': 'icon-ppt',
-                'pdf': 'icon-pdf',
-                'word': 'icon-word'
-            };
-            return icons[tipo] || 'icon-default';
-        }
+        // =========================================================
+        // TAB 2: ANÁLISIS DE REVISIÓN DE MEDIANO PLAZO
+        // =========================================================
 
-        function getDocIconText(tipo) {
-            const texts = {
-                'excel': 'XLS',
-                'powerpoint': 'PPT',
-                'pdf': 'PDF',
-                'word': 'DOC'
-            };
-            return texts[tipo] || 'DOC';
-        }
+        // Sub-navegación de secciones
+        const analysisTabs = document.querySelectorAll('.analysis-tab');
+        const analysisSections = document.querySelectorAll('.analysis-section');
 
-        // Búsqueda en el repositorio
-        repoSearchInput.addEventListener('input', () => {
-            const query = repoSearchInput.value.toLowerCase().trim();
-            const docCards = document.querySelectorAll('.doc-card');
-            const categories = document.querySelectorAll('.repo-category');
-
-            if (!query) {
-                docCards.forEach(card => card.style.display = '');
-                categories.forEach(cat => cat.style.display = '');
-                return;
-            }
-
-            docCards.forEach(card => {
-                const searchText = card.dataset.search || '';
-                card.style.display = searchText.includes(query) ? '' : 'none';
-            });
-
-            // Ocultar categorías sin resultados visibles
-            categories.forEach(cat => {
-                const visibleDocs = cat.querySelectorAll('.doc-card:not([style*="display: none"])');
-                const emptyMsg = cat.querySelector('.empty-category');
-                cat.style.display = (visibleDocs.length === 0 && !emptyMsg) ? 'none' : '';
+        analysisTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                analysisTabs.forEach(t => t.classList.remove('active'));
+                analysisSections.forEach(s => s.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('section-' + tab.dataset.section).classList.add('active');
             });
         });
+
+        let consolidadoData = null;
+
+        async function loadConsolidado() {
+            try {
+                const resp = await fetch('consolidado_datos.json');
+                if (!resp.ok) throw new Error('No se pudo cargar consolidado_datos.json');
+                consolidadoData = await resp.json();
+
+                renderResumen(consolidadoData.resumen);
+                renderBase(consolidadoData.base);
+                renderConceptos(consolidadoData.conceptos);
+                renderCruce(consolidadoData.cruce);
+            } catch (err) {
+                console.error('Error cargando consolidado:', err);
+            }
+        }
+
+        // --- COLORES ---
+        const TIPO_COLORS = {
+            'Forma': '#3498DB',
+            'Fondo': '#E74C3C',
+            'Sin cambio': '#95A5A6',
+            'Sin Cambio': '#95A5A6',
+            'Indeterminado': '#F39C12'
+        };
+
+        const SISTEMA_COLORS = {
+            'A. Sistema Público y Colectivo': '#1B4F72',
+            'B. Sistema de Ocupación': '#117A65',
+            'C. Sistema Institucional y de Gestión': '#922B21'
+        };
+
+        const NIVEL_COLORS = {
+            'Convergente': '#27AE60',
+            'Parcial': '#F39C12',
+            'Insuficiente': '#E67E22',
+            'Ausente': '#E74C3C'
+        };
+
+        // =====================================================
+        // RESUMEN CUANTITATIVO
+        // =====================================================
+        function renderResumen(resumen) {
+            // Calcular totales globales
+            let totalCambios = 0, totalForma = 0, totalFondo = 0, totalSinCambio = 0, totalIndet = 0;
+            resumen.forEach(r => {
+                totalCambios += r.Total;
+                totalForma += r.Forma;
+                totalFondo += r.Fondo;
+                totalSinCambio += r['Sin Cambio'];
+                totalIndet += r.Indeterminado;
+            });
+
+            document.getElementById('resumenGlobalStats').innerHTML = `
+                <div class="global-stat"><span class="gs-number">${totalCambios}</span><span class="gs-label">Total cambios</span></div>
+                <div class="global-stat fondo"><span class="gs-number">${totalFondo}</span><span class="gs-label">De fondo</span></div>
+                <div class="global-stat forma"><span class="gs-number">${totalForma}</span><span class="gs-label">De forma</span></div>
+                <div class="global-stat sinc"><span class="gs-number">${totalSinCambio}</span><span class="gs-label">Sin cambio</span></div>
+                <div class="global-stat indet"><span class="gs-number">${totalIndet}</span><span class="gs-label">Indeterminado</span></div>
+                <div class="global-stat pct-fondo"><span class="gs-number">${Math.round(totalFondo/totalCambios*100)}%</span><span class="gs-label">Son de fondo</span></div>
+            `;
+
+            // Barras horizontales
+            let barHTML = '<h4>Cambios por bloque temático</h4>';
+            const sorted = [...resumen].sort((a,b) => b.Total - a.Total);
+            const maxTotal = sorted[0]?.Total || 1;
+
+            sorted.forEach(r => {
+                const pctForma = (r.Forma / r.Total * 100) || 0;
+                const pctFondo = (r.Fondo / r.Total * 100) || 0;
+                const pctSin = (r['Sin Cambio'] / r.Total * 100) || 0;
+                const pctIndet = (r.Indeterminado / r.Total * 100) || 0;
+                const barWidth = (r.Total / maxTotal * 100);
+
+                barHTML += `
+                <div class="bar-row">
+                    <div class="bar-label">${escapeHTML(r.Bloque)}<span class="bar-sistema">${escapeHTML(r.Sistema.replace(/^[ABC]\.\s*/, ''))}</span></div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: ${barWidth}%;">
+                            <div class="bar-segment" style="width:${pctFondo}%; background:${TIPO_COLORS.Fondo};" title="Fondo: ${r.Fondo}"></div>
+                            <div class="bar-segment" style="width:${pctForma}%; background:${TIPO_COLORS.Forma};" title="Forma: ${r.Forma}"></div>
+                            <div class="bar-segment" style="width:${pctSin}%; background:${TIPO_COLORS['Sin cambio']};" title="Sin Cambio: ${r['Sin Cambio']}"></div>
+                            <div class="bar-segment" style="width:${pctIndet}%; background:${TIPO_COLORS.Indeterminado};" title="Indet.: ${r.Indeterminado}"></div>
+                        </div>
+                    </div>
+                    <div class="bar-value">${r.Total}</div>
+                </div>`;
+            });
+
+            barHTML += `
+            <div class="bar-legend">
+                <span><i style="background:${TIPO_COLORS.Fondo}"></i> Fondo</span>
+                <span><i style="background:${TIPO_COLORS.Forma}"></i> Forma</span>
+                <span><i style="background:${TIPO_COLORS['Sin cambio']}"></i> Sin cambio</span>
+                <span><i style="background:${TIPO_COLORS.Indeterminado}"></i> Indeterminado</span>
+            </div>`;
+            document.getElementById('chartBarras').innerHTML = barHTML;
+
+            // Pie chart (CSS puro)
+            const pieData = [
+                { label: 'Fondo', value: totalFondo, color: TIPO_COLORS.Fondo },
+                { label: 'Forma', value: totalForma, color: TIPO_COLORS.Forma },
+                { label: 'Sin cambio', value: totalSinCambio, color: TIPO_COLORS['Sin cambio'] },
+                { label: 'Indeterminado', value: totalIndet, color: TIPO_COLORS.Indeterminado }
+            ];
+
+            let cumPct = 0;
+            const gradientParts = [];
+            pieData.forEach(d => {
+                const pct = d.value / totalCambios * 100;
+                gradientParts.push(`${d.color} ${cumPct}% ${cumPct + pct}%`);
+                cumPct += pct;
+            });
+
+            let pieHTML = `
+                <h4>Distribución por tipo de cambio</h4>
+                <div class="pie-chart" style="background: conic-gradient(${gradientParts.join(', ')});">
+                    <div class="pie-center">${totalCambios}<br><small>cambios</small></div>
+                </div>
+                <div class="pie-legend">`;
+            pieData.forEach(d => {
+                pieHTML += `<span><i style="background:${d.color}"></i> ${d.label}: ${d.value} (${Math.round(d.value/totalCambios*100)}%)</span>`;
+            });
+            pieHTML += `</div>`;
+            document.getElementById('chartTipoPie').innerHTML = pieHTML;
+
+            // Tabla de resumen
+            const thead = document.querySelector('#resumenTable thead');
+            const tbody = document.querySelector('#resumenTable tbody');
+            thead.innerHTML = '<tr><th>Sistema</th><th>Bloque</th><th>Total</th><th>Forma</th><th>Fondo</th><th>Sin Cambio</th><th>Indet.</th><th>% Fondo</th></tr>';
+            let trows = '';
+            resumen.forEach(r => {
+                const pctFondo = r.Total > 0 ? Math.round(r.Fondo / r.Total * 100) : 0;
+                trows += `<tr>
+                    <td><span class="sistema-tag" style="background:${SISTEMA_COLORS[r.Sistema] || '#666'}">${escapeHTML(r.Sistema.replace(/^[ABC]\.\s*/, ''))}</span></td>
+                    <td>${escapeHTML(r.Bloque)}</td>
+                    <td class="num">${r.Total}</td>
+                    <td class="num">${r.Forma}</td>
+                    <td class="num bold">${r.Fondo}</td>
+                    <td class="num">${r['Sin Cambio']}</td>
+                    <td class="num">${r.Indeterminado}</td>
+                    <td class="num"><div class="pct-bar"><div class="pct-fill" style="width:${pctFondo}%; background:${pctFondo > 70 ? TIPO_COLORS.Fondo : pctFondo > 40 ? TIPO_COLORS.Indeterminado : TIPO_COLORS.Forma}"></div><span>${pctFondo}%</span></div></td>
+                </tr>`;
+            });
+            tbody.innerHTML = trows;
+        }
+
+        // =====================================================
+        // BASE DE DATOS
+        // =====================================================
+        let allBaseRows = [];
+
+        function renderBase(base) {
+            allBaseRows = base;
+
+            // Poblar filtros
+            const sistemas = [...new Set(base.map(r => r.Sistema).filter(Boolean))];
+            const tipos = [...new Set(base.map(r => r['Forma/Fondo']).filter(Boolean))];
+
+            const selSistema = document.getElementById('filterSistema');
+            sistemas.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s.replace(/^[ABC]\.\s*/, ''); selSistema.appendChild(o); });
+
+            const selTipo = document.getElementById('filterTipo');
+            tipos.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; selTipo.appendChild(o); });
+
+            selSistema.addEventListener('change', filterBase);
+            selTipo.addEventListener('change', filterBase);
+            document.getElementById('filterTexto').addEventListener('input', filterBase);
+
+            renderBaseTable(base);
+        }
+
+        function filterBase() {
+            const sistema = document.getElementById('filterSistema').value;
+            const tipo = document.getElementById('filterTipo').value;
+            const texto = document.getElementById('filterTexto').value.toLowerCase().trim();
+
+            let filtered = allBaseRows;
+            if (sistema) filtered = filtered.filter(r => r.Sistema === sistema);
+            if (tipo) filtered = filtered.filter(r => r['Forma/Fondo'] === tipo);
+            if (texto) filtered = filtered.filter(r =>
+                (r.Tema || '').toLowerCase().includes(texto) ||
+                (r['Sección/Numeral'] || '').toLowerCase().includes(texto) ||
+                (r['Propuesta de Modificación'] || '').toLowerCase().includes(texto) ||
+                (r['POT Vigente (Acuerdo 48/2014)'] || '').toLowerCase().includes(texto) ||
+                (r.Bloque || '').toLowerCase().includes(texto) ||
+                (r.Observaciones || '').toLowerCase().includes(texto)
+            );
+            renderBaseTable(filtered);
+        }
+
+        function renderBaseTable(rows) {
+            document.getElementById('baseCount').innerHTML = `<span>Mostrando <strong>${rows.length}</strong> de ${allBaseRows.length} cambios</span>`;
+
+            const thead = document.querySelector('#baseTable thead');
+            const tbody = document.querySelector('#baseTable tbody');
+            thead.innerHTML = '<tr><th>#</th><th>Sistema</th><th>Bloque</th><th>Tema</th><th>POT Vigente</th><th>Propuesta de Modificación</th><th>Tipo</th></tr>';
+
+            let html = '';
+            rows.forEach((r, i) => {
+                const tipoColor = TIPO_COLORS[r['Forma/Fondo']] || '#666';
+                html += `<tr>
+                    <td class="num">${i + 1}</td>
+                    <td><span class="sistema-tag" style="background:${SISTEMA_COLORS[r.Sistema] || '#666'}">${escapeHTML((r.Sistema || '').replace(/^[ABC]\.\s*/, ''))}</span></td>
+                    <td>${escapeHTML(r.Bloque || '')}</td>
+                    <td><strong>${escapeHTML(r['Sección/Numeral'] || r.Tema || '')}</strong>${r.Tema && r['Sección/Numeral'] ? '<br><small>' + escapeHTML(r.Tema) + '</small>' : ''}</td>
+                    <td class="cell-text">${escapeHTML((r['POT Vigente (Acuerdo 48/2014)'] || '').substring(0, 150))}${(r['POT Vigente (Acuerdo 48/2014)'] || '').length > 150 ? '...' : ''}</td>
+                    <td class="cell-text">${escapeHTML((r['Propuesta de Modificación'] || '').substring(0, 150))}${(r['Propuesta de Modificación'] || '').length > 150 ? '...' : ''}</td>
+                    <td><span class="tipo-badge" style="background:${tipoColor}">${escapeHTML(r['Forma/Fondo'] || 'N/D')}</span></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // =====================================================
+        // NUEVOS CONCEPTOS
+        // =====================================================
+        function renderConceptos(conceptos) {
+            const grid = document.getElementById('conceptosGrid');
+            let html = '';
+            conceptos.forEach(c => {
+                const impactoColor = c.Impacto === 'Alto' ? '#E74C3C' : c.Impacto === 'Medio' ? '#F39C12' : '#95A5A6';
+                html += `
+                <div class="concepto-card">
+                    <div class="concepto-header">
+                        <h4>${escapeHTML(c['Concepto/Categoría'])}</h4>
+                        <span class="impacto-badge" style="background:${impactoColor}">${escapeHTML(c.Impacto)}</span>
+                    </div>
+                    <p class="concepto-tipo">${escapeHTML(c['Tipo de Innovación'])}</p>
+                    <div class="concepto-meta">
+                        <span class="sistema-tag" style="background:${c.Sistema.includes('Público') ? SISTEMA_COLORS['A. Sistema Público y Colectivo'] : c.Sistema.includes('Ocupación') ? SISTEMA_COLORS['B. Sistema de Ocupación'] : SISTEMA_COLORS['C. Sistema Institucional y de Gestión']}">${escapeHTML(c.Sistema)}</span>
+                        <span class="bloque-tag">${escapeHTML(c['Bloque(s)'])}</span>
+                    </div>
+                </div>`;
+            });
+            grid.innerHTML = html;
+        }
+
+        // =====================================================
+        // CRUCE COMUNITARIO
+        // =====================================================
+        function renderCruce(cruce) {
+            // Leyenda
+            document.getElementById('cruceLegend').innerHTML = `
+                <span><i style="background:${NIVEL_COLORS.Convergente}"></i> Convergente</span>
+                <span><i style="background:${NIVEL_COLORS.Parcial}"></i> Parcial</span>
+                <span><i style="background:${NIVEL_COLORS.Insuficiente}"></i> Insuficiente</span>
+                <span><i style="background:${NIVEL_COLORS.Ausente}"></i> Ausente</span>
+            `;
+
+            const grid = document.getElementById('cruceGrid');
+            let html = '';
+            cruce.forEach(c => {
+                const color = NIVEL_COLORS[c['Nivel Respuesta']] || '#999';
+                html += `
+                <div class="cruce-card" style="border-left: 5px solid ${color};">
+                    <div class="cruce-header">
+                        <h4>${escapeHTML(c['Tema Comunitario'])}</h4>
+                        <span class="nivel-badge" style="background:${color}">${escapeHTML(c['Nivel Respuesta'])}</span>
+                    </div>
+                    <div class="cruce-body">
+                        <div class="cruce-col">
+                            <span class="cruce-label">Demanda comunitaria</span>
+                            <p>${escapeHTML(c['Demanda Central'])}</p>
+                        </div>
+                        <div class="cruce-col">
+                            <span class="cruce-label">Respuesta en el POT</span>
+                            <p>${escapeHTML(c['Respuesta POT'])}</p>
+                        </div>
+                    </div>
+                    <div class="cruce-valoracion">
+                        <span class="cruce-label">Valoración crítica</span>
+                        <p>${escapeHTML(c['Valoración Crítica'])}</p>
+                    </div>
+                </div>`;
+            });
+            grid.innerHTML = html;
+        }
 
         // =========================================================
         // INICIALIZACIÓN
         // =========================================================
         window.addEventListener('load', () => {
             loadData();
-            loadRepositorio();
+            loadConsolidado();
         });
     </script>
 </body>
