@@ -37,6 +37,7 @@
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="Buscar por palabra clave o título...">
                 <button id="resetButton">Reiniciar</button>
+                <button id="exportButton" disabled title="Busca primero para exportar resultados">Exportar CSV</button>
             </div>
         </div>
 
@@ -48,26 +49,38 @@
             <div id="network">
                 <div class="loading">Cargando visualización del POT de Medellín...</div>
             </div>
+
+            <!-- Panel de detalle lateral -->
+            <div class="detail-panel" id="detailPanel">
+                <div class="detail-panel-header">
+                    <h4>Detalle del Nodo</h4>
+                    <button class="detail-close" id="detailClose">&times;</button>
+                </div>
+                <div class="detail-panel-body" id="detailBody">
+                    <p class="detail-hint">Haz clic en un nodo para ver su detalle y conexiones.</p>
+                </div>
+            </div>
+
             <div class="legend">
                 <h4>Leyenda</h4>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #2B7CE9;"></div>
+                    <div class="legend-color" style="background-color: #1B4F72;"></div>
                     <span>Nivel 1 - Títulos</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #5CB85C;"></div>
+                    <div class="legend-color" style="background-color: #117A65;"></div>
                     <span>Nivel 2 - Capítulos</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #F0AD4E;"></div>
+                    <div class="legend-color" style="background-color: #B7950B;"></div>
                     <span>Nivel 3 - Artículos</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #D9534F;"></div>
+                    <div class="legend-color" style="background-color: #922B21;"></div>
                     <span>Otros Niveles</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #FFD700;"></div>
+                    <div class="legend-color" style="background-color: #FF5722; border: 2px solid #BF360C;"></div>
                     <span>Resultado de Búsqueda</span>
                 </div>
                 <div class="legend-instructions">
@@ -123,7 +136,6 @@
                 btn.classList.add('active');
                 document.getElementById('tab-' + targetTab).classList.add('active');
 
-                // Re-ajustar el network si volvemos al POT
                 if (targetTab === 'pot-vigente' && network) {
                     setTimeout(() => network.fit(), 100);
                 }
@@ -136,8 +148,12 @@
         const networkContainer = document.getElementById('network');
         const searchInput = document.getElementById('searchInput');
         const resetButton = document.getElementById('resetButton');
+        const exportButton = document.getElementById('exportButton');
         const infoText = document.getElementById('infoText');
         const levelButtons = document.querySelectorAll('.level-btn');
+        const detailPanel = document.getElementById('detailPanel');
+        const detailBody = document.getElementById('detailBody');
+        const detailClose = document.getElementById('detailClose');
 
         let allNodesData = [];
         let allEdgesData = [];
@@ -145,9 +161,15 @@
         let visibleEdges = new vis.DataSet([]);
         let expandedNodes = new Set();
         let currentSearchResults = new Set();
+        let lastSearchMatchingNodes = [];
         let network = null;
         let isSearchMode = false;
         let currentLevelFilter = 'all';
+
+        // Cerrar panel de detalle
+        detailClose.addEventListener('click', () => {
+            detailPanel.classList.remove('open');
+        });
 
         // --- Filtros por nivel ---
         levelButtons.forEach(btn => {
@@ -160,7 +182,7 @@
         });
 
         function applyLevelFilter() {
-            if (isSearchMode) return; // No interferir con búsqueda activa
+            if (isSearchMode) return;
 
             visibleNodes.clear();
             visibleEdges.clear();
@@ -177,16 +199,67 @@
 
         function showFilteredLevelNodes(level) {
             const levelNodes = allNodesData.filter(node => node.level === level);
-
-            const nodeUpdates = levelNodes.map(node => ({
-                ...node,
-                color: getNodeColor(node.level),
-                font: { color: '#333', size: 14 },
-                physics: true
-            }));
-
+            const nodeUpdates = levelNodes.map(node => createVisNode(node));
             visibleNodes.add(nodeUpdates);
             updateVisibleEdges();
+        }
+
+        // Nombres de nivel
+        const LEVEL_NAMES = {
+            1: 'Título',
+            2: 'Capítulo',
+            3: 'Artículo',
+            99: 'Otro'
+        };
+
+        // --- Tamaños por nivel (más grandes y diferenciados) ---
+        function getNodeSize(level) {
+            const sizes = { 1: 18, 2: 16, 3: 14, 99: 12 };
+            return sizes[level] || 12;
+        }
+
+        function getNodeMargin(level) {
+            const margins = { 1: 14, 2: 12, 3: 10, 99: 8 };
+            return margins[level] || 8;
+        }
+
+        // --- Colores de alto contraste con texto blanco ---
+        function getNodeColor(level) {
+            const colors = {
+                1: { background: '#1B4F72', border: '#154360', highlight: { background: '#2471A3', border: '#1A5276' } },
+                2: { background: '#117A65', border: '#0E6655', highlight: { background: '#148F77', border: '#117A65' } },
+                3: { background: '#B7950B', border: '#9A7D0A', highlight: { background: '#D4AC0D', border: '#B7950B' } },
+                4: { background: '#922B21', border: '#7B241C', highlight: { background: '#A93226', border: '#922B21' } },
+                99: { background: '#5D6D7E', border: '#4D5656', highlight: { background: '#7F8C8D', border: '#5D6D7E' } }
+            };
+            return colors[level] || colors[99];
+        }
+
+        function getNodeFontColor(level) {
+            return '#FFFFFF';
+        }
+
+        // --- Crear nodo visual ---
+        function createVisNode(node, isHighlighted) {
+            if (isHighlighted) {
+                return {
+                    ...node,
+                    color: { background: '#FF5722', border: '#BF360C', highlight: { background: '#FF7043', border: '#E64A19' } },
+                    font: { color: '#FFFFFF', size: getNodeSize(node.level) + 2, bold: true },
+                    borderWidth: 3,
+                    margin: getNodeMargin(node.level) + 2,
+                    shadow: { enabled: true, color: 'rgba(255,87,34,0.4)', size: 10 },
+                    physics: true
+                };
+            }
+            return {
+                ...node,
+                color: getNodeColor(node.level),
+                font: { color: getNodeFontColor(node.level), size: getNodeSize(node.level) },
+                borderWidth: node.level === 1 ? 3 : 2,
+                margin: getNodeMargin(node.level),
+                physics: true
+            };
         }
 
         // --- Cargar datos ---
@@ -222,7 +295,7 @@
                             label: etiqueta.length > 60 ? etiqueta.substring(0, 60) + '...' : etiqueta,
                             fullLabel: etiqueta,
                             level: nivel,
-                            title: `Nivel: ${node.nivel || 'N/A'}<br>${etiqueta}`,
+                            title: `<b>${LEVEL_NAMES[nivel] || 'Nivel ' + nivel}</b><br>${etiqueta}`,
                             originalLabel: etiqueta
                         };
                     });
@@ -268,6 +341,7 @@
 
             searchInput.addEventListener('input', onSearch);
             resetButton.addEventListener('click', resetView);
+            exportButton.addEventListener('click', exportSearchResults);
 
             updateInfoText();
         }
@@ -276,13 +350,7 @@
             const levelNodes = allNodesData.filter(node => node.level === level);
             if (levelNodes.length === 0) return;
 
-            const nodeUpdates = levelNodes.map(node => ({
-                ...node,
-                color: getNodeColor(node.level),
-                font: { color: '#333', size: 14 },
-                physics: true
-            }));
-
+            const nodeUpdates = levelNodes.map(node => createVisNode(node));
             visibleNodes.add(nodeUpdates);
             updateVisibleEdges();
         }
@@ -315,16 +383,68 @@
                 connectedNodeIds.has(node.id) && !visibleNodeIds.has(node.id)
             );
 
-            const nodeUpdates = newNodes.map(node => ({
-                ...node,
-                color: getNodeColor(node.level),
-                font: { color: '#333', size: 14 },
-                physics: true
-            }));
-
+            const nodeUpdates = newNodes.map(node => createVisNode(node));
             visibleNodes.add(nodeUpdates);
             updateVisibleEdges();
             updateInfoText();
+        }
+
+        // --- Panel de detalle ---
+        function showNodeDetail(nodeId) {
+            const node = allNodesData.find(n => n.id === nodeId);
+            if (!node) return;
+
+            const connectedEdges = allEdgesData.filter(e => e.from === nodeId || e.to === nodeId);
+            const connectedNodeIds = new Set();
+            connectedEdges.forEach(e => {
+                if (e.from !== nodeId) connectedNodeIds.add(e.from);
+                if (e.to !== nodeId) connectedNodeIds.add(e.to);
+            });
+
+            const connectedNodes = allNodesData.filter(n => connectedNodeIds.has(n.id));
+
+            // Agrupar conexiones por nivel
+            const byLevel = {};
+            connectedNodes.forEach(cn => {
+                const levelName = LEVEL_NAMES[cn.level] || 'Nivel ' + cn.level;
+                if (!byLevel[levelName]) byLevel[levelName] = [];
+                byLevel[levelName].push(cn);
+            });
+
+            let html = `
+                <div class="detail-node-title">
+                    <span class="detail-level-badge" style="background-color: ${getNodeColor(node.level).background};">
+                        ${LEVEL_NAMES[node.level] || 'Nivel ' + node.level}
+                    </span>
+                    <p>${escapeHTML(node.originalLabel)}</p>
+                </div>
+                <div class="detail-connections">
+                    <h5>${connectedNodes.length} conexiones</h5>`;
+
+            for (const [levelName, nodes] of Object.entries(byLevel)) {
+                html += `<div class="detail-group"><span class="detail-group-label">${levelName} (${nodes.length})</span><ul>`;
+                nodes.forEach(cn => {
+                    html += `<li class="detail-connection-item" data-node-id="${cn.id}">${escapeHTML(cn.originalLabel)}</li>`;
+                });
+                html += `</ul></div>`;
+            }
+
+            html += `</div>`;
+            detailBody.innerHTML = html;
+            detailPanel.classList.add('open');
+
+            // Navegar al hacer clic en una conexión
+            detailBody.querySelectorAll('.detail-connection-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const targetId = item.dataset.nodeId;
+                    expandNode(targetId);
+                    if (network) {
+                        network.selectNodes([targetId]);
+                        network.focus(targetId, { scale: 1.2, animation: true });
+                    }
+                    showNodeDetail(targetId);
+                });
+            });
         }
 
         function onSearch() {
@@ -332,6 +452,7 @@
 
             if (!searchText) {
                 if (isSearchMode) resetView();
+                exportButton.disabled = true;
                 return;
             }
 
@@ -343,8 +464,12 @@
 
             if (matchingNodes.length === 0) {
                 updateInfoText("No se encontraron resultados para la búsqueda.");
+                exportButton.disabled = true;
+                lastSearchMatchingNodes = [];
                 return;
             }
+
+            lastSearchMatchingNodes = matchingNodes;
 
             const neighborhoodNodes = new Set();
             const neighborhoodEdges = [];
@@ -365,6 +490,7 @@
             currentSearchResults = new Set(matchingNodes.map(n => n.id));
             highlightSearchResults();
             updateInfoText();
+            exportButton.disabled = false;
         }
 
         function showNeighborhood(nodeIds, edges) {
@@ -373,12 +499,7 @@
             expandedNodes.clear();
 
             const nodesToShow = allNodesData.filter(node => nodeIds.includes(node.id));
-            const nodeUpdates = nodesToShow.map(node => ({
-                ...node,
-                color: getNodeColor(node.level),
-                font: { color: '#333', size: 14 },
-                physics: true
-            }));
+            const nodeUpdates = nodesToShow.map(node => createVisNode(node));
             visibleNodes.add(nodeUpdates);
 
             const visibleNodeIds = new Set(visibleNodes.getIds());
@@ -392,31 +513,79 @@
             const updates = [];
             visibleNodes.forEach(node => {
                 if (currentSearchResults.has(node.id)) {
-                    updates.push({
-                        id: node.id,
-                        color: { background: '#FFD700', border: '#FF8C00' },
-                        font: { color: '#000', size: 16 }
-                    });
+                    const orig = allNodesData.find(n => n.id === node.id);
+                    if (orig) {
+                        updates.push(createVisNode(orig, true));
+                    }
                 }
             });
             visibleNodes.update(updates);
         }
 
-        function getNodeColor(level) {
-            const colors = {
-                1: { background: '#2B7CE9', border: '#1A5CC9' },
-                2: { background: '#5CB85C', border: '#4CAE4C' },
-                3: { background: '#F0AD4E', border: '#EC971F' },
-                4: { background: '#D9534F', border: '#C9302C' },
-                99: { background: '#999999', border: '#777777' }
-            };
-            return colors[level] || colors[99];
-        }
-
         function onNodeClick(params) {
             if (params.nodes.length > 0) {
-                expandNode(params.nodes[0]);
+                const nodeId = params.nodes[0];
+                expandNode(nodeId);
+                showNodeDetail(nodeId);
             }
+        }
+
+        // =========================================================
+        // EXPORTAR RESULTADOS DE BÚSQUEDA A CSV
+        // =========================================================
+        function exportSearchResults() {
+            if (lastSearchMatchingNodes.length === 0) return;
+
+            const searchText = searchInput.value.trim();
+
+            // Recopilar nodos resultado + sus conexiones directas
+            const rows = [];
+            lastSearchMatchingNodes.forEach(node => {
+                const connectedEdges = allEdgesData.filter(e => e.from === node.id || e.to === node.id);
+                const connectedNodeIds = new Set();
+                connectedEdges.forEach(e => {
+                    if (e.from !== node.id) connectedNodeIds.add(e.from);
+                    if (e.to !== node.id) connectedNodeIds.add(e.to);
+                });
+
+                const connectedNodes = allNodesData.filter(n => connectedNodeIds.has(n.id));
+                const connectedLabels = connectedNodes.map(cn => cn.originalLabel).join(' | ');
+
+                rows.push({
+                    id: node.id,
+                    nivel: LEVEL_NAMES[node.level] || 'Nivel ' + node.level,
+                    articulo: node.originalLabel,
+                    num_conexiones: connectedNodes.length,
+                    articulado_relacionado: connectedLabels
+                });
+            });
+
+            // Generar CSV
+            const headers = ['ID', 'Nivel', 'Artículo/Sección', 'Num. Conexiones', 'Articulado Relacionado'];
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(r =>
+                    [
+                        r.id,
+                        `"${r.nivel}"`,
+                        `"${r.articulo.replace(/"/g, '""')}"`,
+                        r.num_conexiones,
+                        `"${r.articulado_relacionado.replace(/"/g, '""')}"`
+                    ].join(',')
+                )
+            ].join('\n');
+
+            // Descargar
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const safeName = searchText.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '').substring(0, 30).trim().replace(/\s+/g, '_');
+            a.download = `POT_busqueda_${safeName || 'resultados'}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         function resetView() {
@@ -424,10 +593,12 @@
             visibleEdges.clear();
             expandedNodes.clear();
             currentSearchResults.clear();
+            lastSearchMatchingNodes = [];
             searchInput.value = '';
             isSearchMode = false;
+            exportButton.disabled = true;
+            detailPanel.classList.remove('open');
 
-            // Restaurar filtro de nivel activo
             levelButtons.forEach(b => b.classList.remove('active'));
             document.querySelector('.level-btn[data-level="all"]').classList.add('active');
             currentLevelFilter = 'all';
@@ -446,12 +617,13 @@
             const searchActive = searchInput.value.trim() !== '';
 
             if (searchActive) {
-                infoText.textContent = `Mostrando ${nodeCount} nodos y ${edgeCount} conexiones del vecindario de búsqueda. Los nodos dorados son resultados directos.`;
+                const matchCount = currentSearchResults.size;
+                infoText.innerHTML = `<strong>${matchCount} resultados directos</strong> + ${nodeCount - matchCount} relacionados, ${edgeCount} conexiones. Los nodos naranjas son resultados directos. <em>Usa "Exportar CSV" para descargar.</em>`;
             } else if (currentLevelFilter !== 'all') {
                 const levelNames = { '1': 'Títulos', '2': 'Capítulos', '3': 'Artículos' };
                 infoText.textContent = `Filtro: ${levelNames[currentLevelFilter] || 'Nivel ' + currentLevelFilter} — ${nodeCount} nodos y ${edgeCount} conexiones.`;
             } else {
-                infoText.textContent = `Mostrando ${nodeCount} nodos y ${edgeCount} conexiones. Haz clic en un nodo para expandir sus conexiones.`;
+                infoText.textContent = `Mostrando ${nodeCount} nodos y ${edgeCount} conexiones. Haz clic en un nodo para ver detalle y expandir.`;
             }
         }
 
@@ -460,40 +632,48 @@
                 layout: { randomSeed: 2 },
                 nodes: {
                     shape: 'box',
-                    font: { size: 14, color: '#333', multi: 'html' },
+                    font: { size: 15, color: '#FFFFFF', multi: 'html', face: 'Segoe UI, Arial, sans-serif' },
                     borderWidth: 2,
-                    margin: 10,
-                    widthConstraint: { maximum: 300 },
+                    margin: 12,
+                    widthConstraint: { maximum: 320 },
+                    shadow: { enabled: true, color: 'rgba(0,0,0,0.15)', size: 5, x: 2, y: 2 },
                     chosen: {
                         node: function(values, id, selected, hovering) {
-                            if (hovering) values.color = '#FF6B6B';
+                            if (hovering) {
+                                values.shadow = true;
+                                values.shadowSize = 12;
+                                values.shadowColor = 'rgba(0,0,0,0.3)';
+                            }
                         }
                     }
                 },
                 edges: {
-                    arrows: 'to',
-                    color: '#848484',
+                    arrows: { to: { enabled: true, scaleFactor: 0.8 } },
+                    color: { color: '#7F8C8D', highlight: '#2C3E50', hover: '#2C3E50', opacity: 0.7 },
                     smooth: { type: 'dynamic', roundness: 0.2 },
-                    width: 1
+                    width: 1.5,
+                    hoverWidth: 2.5
                 },
                 interaction: {
                     hover: true,
                     zoomView: true,
                     dragView: true,
-                    tooltipDelay: 300,
+                    tooltipDelay: 200,
                     hideEdgesOnDrag: true,
-                    hideNodesOnDrag: false
+                    hideNodesOnDrag: false,
+                    navigationButtons: true,
+                    keyboard: { enabled: true }
                 },
                 physics: {
                     enabled: true,
                     stabilization: { iterations: 200, updateInterval: 50 },
                     barnesHut: {
-                        gravitationalConstant: -3000,
-                        centralGravity: 0.1,
-                        springLength: 120,
-                        springConstant: 0.05,
-                        damping: 0.1,
-                        avoidOverlap: 0.2
+                        gravitationalConstant: -4000,
+                        centralGravity: 0.08,
+                        springLength: 150,
+                        springConstant: 0.04,
+                        damping: 0.12,
+                        avoidOverlap: 0.3
                     },
                     maxVelocity: 30,
                     minVelocity: 0.1,
