@@ -1228,6 +1228,29 @@ h1 {
     line-height: 1.5;
 }
 
+.detail-texto-pot {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px;
+}
+
+.detail-texto-pot h5 {
+    font-size: 0.82em;
+    font-weight: 700;
+    color: #1B4F72;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 6px 0;
+}
+
+.detail-texto-pot p {
+    font-size: 0.88em;
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+}
+
 .detail-connections h5 {
     margin: 0 0 10px 0;
     font-size: 0.85em;
