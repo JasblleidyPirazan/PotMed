@@ -822,6 +822,14 @@
                 html += '</div>';
             }
 
+            if (node.resumen) {
+                html += `
+                <div class="detail-texto-pot">
+                    <h5>Texto del POT</h5>
+                    <p>${escapeHTML(node.resumen)}</p>
+                </div>`;
+            }
+
             html += `<div class="detail-connections"><h5>${connectedNodes.length} conexiones</h5>`;
 
             for (const [levelName, nodes] of Object.entries(byLevel)) {
