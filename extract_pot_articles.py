@@ -165,10 +165,24 @@ def extract():
     for idx, h in enumerate(headers):
         next_line = headers[idx + 1]["line"] if idx + 1 < len(headers) else end_of_articulado
         body_lines = raw[h["line"] + 1: next_line]
+        titulo = h["titulo"]
+        # Fold title-wrap lines into the title. The PDF often breaks long titles
+        # across two lines; we recognize this when the parsed title doesn't end
+        # with '.' and the first non-noise body line is short and ends with '.'.
+        if not titulo.rstrip().endswith("."):
+            # Find the first non-noise non-empty line.
+            for i, ln in enumerate(body_lines):
+                if is_noise(ln) or not ln.strip():
+                    continue
+                cont = ln.strip()
+                if len(cont) <= 80 and cont.endswith("."):
+                    titulo = (titulo.rstrip() + " " + cont).strip()
+                    body_lines = body_lines[i + 1:]
+                break
         body = normalize_body(body_lines)
         records.append({
             "numero": h["numero"],
-            "titulo": h["titulo"],
+            "titulo": titulo,
             "parte": h["parte"],
             "titulo_pot": h["titulo_pot"],
             "capitulo": h["capitulo"],

@@ -53,14 +53,25 @@ Validaciones realizadas:
 | `articulos_pot.csv` | Mismo contenido en CSV. |
 | `extract_pot_articles.py` | Script reproducible (requiere `poppler-utils` para `pdftotext`). |
 
-## Estado de los archivos previos
+## Integración en la visualización (`nodos_v2.csv`, `relaciones_v2.csv`, `kpi_pot.csv`)
 
-`nodos.csv`, `nodos_v2.csv`, `relaciones.csv`, `relaciones_v2.csv`, `temas_pot.csv`, `kpi_pot.csv` y `consolidado_datos.json` se conservan **sin modificar**. El siguiente paso natural —no incluido en este commit— sería:
+El script `update_nodos_v2.py` aplica los datos extraídos al grafo que consume `index.html`:
 
-1. Reemplazar el campo `resumen` de las 624 filas de `tipo=articulo` en `nodos_v2.csv` por el texto íntegro tomado de `articulos_pot.json`.
-2. Eliminar las dos filas duplicadas (art. 355 doble, art. 412 corrupto en `n15`).
-3. Corregir `kpi_pot.csv`: `total_articulos = 622` (no 624) y `total_nodos` recontado.
-4. Ajustar `index.html` para mostrar `texto_completo` en el panel de detalle del nodo.
+- Reemplaza el campo `resumen` de las 622 filas `tipo=articulo` por el **texto íntegro** del artículo.
+- Reemplaza la `etiqueta` truncada por **"Artículo N. <título completo>"** con tildes.
+- Backfilla `parte`, `titulo_pot` y `capitulo_pot` cuando estaban vacíos en la fila.
+- Elimina la fila `n833` (duplicado de Art. 355, sin aristas) y la fila `n15` (etiqueta corrupta `"Articulo 412, Articulo 413 y Articulo 414"`).
+- Re-rutea la única arista que apuntaba a `n15` para que apunte a `n767` (el nodo legítimo de Art. 412).
+- Recalcula `kpi_pot.csv`:
+
+| Métrica | Antes | Después |
+|---|---|---|
+| `total_nodos` | 676 | **674** |
+| `total_articulos` | 624 | **622** |
+| `total_relaciones` | 747 | **746** |
+| `relaciones_jerarquicas` | 308 | **307** |
+
+`index.html` no requiere cambios: el panel de detalle ya renderiza `node.resumen` dentro de un `<p>` con `white-space: pre-wrap`, lo que preserva los saltos de línea del texto extraído.
 
 ## Cómo reproducir la extracción
 
